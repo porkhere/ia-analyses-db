@@ -47,6 +47,14 @@
 - 下一輪最小實作範圍：建立一份小日期窗的 tracked dev baseline dump、加上 manifest、補 `make dev-restore-baseline` 與 `make dev-smoke-analytics`
 - 詳細設計見 [文件/minimal_analytics_baseline_plan.md](文件/minimal_analytics_baseline_plan.md)
 
+## 2026-05-20 analytics productization gap 結論
+
+- 目前最接近產品化的基礎是：`pos_sales_hourly_fact`、六張核心維度 / 映射表、`sales-pipe-*` controller、`sync-sales-dims*` 與 `sync-athena-*` pipeline，以及 `文件/quicksight_metric_mapping.md`
+- 目前最可直接產品化的統計是商品排行、門店排行、時段銷售、canonical payment mix、order type mix、稅/折扣/附加費摘要
+- 目前最大的 productization gap 不是再擴 schema，而是：`可重現 baseline data`、`商品語意分類`、`API layer`、`aggregation / materialized view layer`
+- 產品 roadmap 建議先從 `baseline restore + semantics + read-only analytics API` 開始，不直接跳大型 forecast 或 ML framework
+- 詳細盤點見 [reports/analytics_productization_gap_20260520.md](reports/analytics_productization_gap_20260520.md)
+
 ## 設計決策
 
 ### 為什麼現在不是單一 fact 模型
