@@ -44,7 +44,8 @@
 - 現有 summary report 與 state 只保存摘要，不是可 restore 的資料快照
 - 建議方案採 `hybrid`：以「tracked minimal backup dump」作為 restore 載體，再配 baseline manifest 與 smoke validation 降低 drift
 - tracked baseline dump 應放在 `backup/dev/baseline/`，避免被一般 `dev-backup` 輪替或 `dev-del-backup ALL=1` 誤刪
-- 下一輪最小實作範圍：建立一份小日期窗的 tracked dev baseline dump、加上 manifest、補 `make dev-restore-baseline` 與 `make dev-smoke-analytics`
+- 本輪已先建立 `backup/dev/baseline/manifest.md`、`make dev-restore-baseline` 與 `make dev-smoke-analytics`
+- 由於目前 repo 內沒有任何可用 dump，且本機 dev DB 查核仍為空資料 baseline，本輪沒有提交 baseline dump；`make dev-restore-baseline` 目前會明確提示缺少 tracked baseline dump，`make dev-smoke-analytics` 目前會明確回報 `smoke failed`
 - 詳細設計見 [文件/minimal_analytics_baseline_plan.md](文件/minimal_analytics_baseline_plan.md)
 
 ## 2026-05-20 analytics productization gap 結論
@@ -211,8 +212,11 @@
 1. 選擇環境並產生目前工作 `.env`：`make dev-env`
 2. 依需要調整 `.env.dev` 或 `.env.prod`，再重新執行對應的 `make dev-env` / `make prod-env`
 3. 啟動 PostgreSQL：`make dev-up`
-4. 檢查資料庫體積：`make dev-size`
-5. 檢查或建立備份：`make dev-backup`
+4. 套用 schema / patch：`make dev-migrate`
+5. 還原 tracked baseline：`make dev-restore-baseline`
+6. 執行 analytics smoke：`make dev-smoke-analytics`
+7. 檢查資料庫體積：`make dev-size`
+8. 檢查或建立一般備份：`make dev-backup`
 
 ## 常用指令
 
@@ -224,6 +228,8 @@ make dev-size
 make dev-backup
 make dev-backup-list
 make dev-restore BACKUP_FILE=2026-05-19-09-30.dump
+make dev-restore-baseline
+make dev-smoke-analytics
 make dev-migrate
 make prod-env
 make prod-up
@@ -399,9 +405,11 @@ make sync-sales-dims OWNER_USER_KEY=demo-owner OWNER_USER_ID=1 START_DATE=2025-0
 - `make dev-sync-seeds` / `make prod-sync-seeds` 會安全地重跑 `db/init/001_schema.sql`，把最新 seed upsert 到現有 DB，不需要刪 volume 重建
 - `make dev-apply-patches` / `make prod-apply-patches` 會套用 `db/patches/*.sql`，用安全方式更新現有 DB schema
 - `make dev-restore` / `make prod-restore` 會先列出備份、接受數字選擇，輸入 `n` 可退出
+- `make dev-restore-baseline` 只會讀 `backup/dev/baseline/*.dump`；若 repo 內尚無 tracked baseline dump，會明確失敗，不會假裝 restore 成功
+- `make dev-smoke-analytics` 會檢查 `pos_product_dim`、`pos_branch_dim`、`pos_sales_hourly_fact` 是否非空，並執行帶有排除關鍵字的商品排行榜 smoke query；資料不足時必須 `smoke failed`
 - restore 屬高風險操作，執行前會先自動做一份當前環境 backup，完成後再執行基本 PostgreSQL 驗證
 - `make dev-up RESTORE=1` / `make prod-up RESTORE=1` 會在容器啟動後進入 restore 流程，然後自動補跑 migrate
-- 下一輪預計補 `make dev-restore-baseline` 與 `make dev-smoke-analytics`，讓 clone 後的最小 analytics smoke test 可直接重建
+- baseline manifest 固定放在 [backup/dev/baseline/manifest.md](backup/dev/baseline/manifest.md)，目前明確標示 repo 尚無 tracked baseline dump
 
 ## 下一階段預計補上
 

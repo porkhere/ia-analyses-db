@@ -77,6 +77,14 @@
 4. baseline 另附 manifest，記錄資料窗、owner、row count、預期 smoke query 結果與 dump checksum。
 5. restore 完成後執行固定 smoke validation，確認非空 fact/dim 與排行榜查詢可跑。
 
+## 2026-05-20 本輪實作狀態
+
+- 已建立 `backup/dev/baseline/manifest.md`，把 baseline 名稱、建立時間、owner/date window 狀態、主要表 row count、smoke expectation 與注意事項固定下來
+- 已新增 `make dev-restore-baseline`，只接受 `backup/dev/baseline/*.dump`；若目前沒有 tracked baseline dump，必須明確失敗
+- 已新增 `make dev-smoke-analytics`，會檢查 `pos_product_dim`、`pos_branch_dim`、`pos_sales_hourly_fact`，並執行帶排除關鍵字的商品排行榜 smoke query；資料不足時必須 non-zero 結束
+- 已驗證目前 repo 內沒有任何 `.dump` / snapshot 可直接作為 baseline，且本機 dev PostgreSQL 目前仍是空資料 baseline，因此本輪沒有提交正式 baseline dump
+- 本輪沒有假造 50 嵐資料、沒有修改 schema、沒有跑完整一個月 pipeline，也沒有把 tracked baseline 混入一般 backup rotation
+
 ### 為什麼 baseline dump 要放子目錄
 
 目前 `db_backup.sh`、`db_restore.sh`、`db_del_backup.sh` 都只掃 `backup/$APP_ENV` 的第一層 `*.dump`。
@@ -118,19 +126,17 @@
 
 ## Makefile 建議新增或調整入口
 
-### 建議新增
+### 已實作
 
 - `dev-restore-baseline`
   - restore repo 內已提交的 tracked minimal baseline dump
   - 內部走既有 `db_restore.sh`，但傳入明確 baseline 路徑
+  - 若沒有 tracked baseline dump，必須明確失敗
 
 - `dev-smoke-analytics`
   - 驗證 `pos_product_dim`、`pos_branch_dim`、`pos_sales_hourly_fact` 皆非空
   - 跑一個固定商品排行榜 smoke query
-  - 後續若商品語意分類完成，再補「特殊交易項不應進排行榜」檢查
-
-- `dev-baseline-info`
-  - 顯示目前 baseline dump 路徑、manifest 版本、日期窗、row count 摘要
+  - 目前已先用名稱關鍵字排除 `幣`、`券`、`折抵`、`折扣`、`點數`、`贈`、`服務費`、`運費`、`調整`、`測試`、`test`
 
 ### 可選但不必在下一輪一次做完
 
@@ -165,14 +171,12 @@
 - baseline restore 完成後仍需補跑 migrate 與 smoke validation
 - restore 屬高風險操作，繼續沿用現有 pre-restore backup 規則
 
-## 下一輪真正要實作的最小範圍
+## 下一輪真正要完成的剩餘最小範圍
 
-1. 選定一個小日期窗，建立單一 owner 的 tracked dev baseline dump
-2. 把 baseline dump 放到 `backup/dev/baseline/`
-3. 新增 baseline manifest
-4. 新增 `make dev-restore-baseline`
-5. 新增 `make dev-smoke-analytics`
-6. 驗證 restore 後三張核心 analytics 表非空，且商品排行榜 smoke query 可跑
+1. 從已驗證的本機 PostgreSQL 或其他已確認來源，建立單一 owner、小日期窗的 tracked dev baseline dump
+2. 把實際 dump 放到 `backup/dev/baseline/`
+3. 依實際 dump 回填 manifest 的 owner、日期窗、row count、checksum 與 smoke expectation
+4. 驗證 restore 後三張核心 analytics 表非空，且商品排行榜 smoke query 可跑
 
 ## 建議的 baseline 內容下限
 

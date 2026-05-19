@@ -10,7 +10,7 @@ DOCKER_COMPOSE := docker compose --project-directory $(PROJECT_DIR) --env-file $
 
 .PHONY: help env-status \
 	dev-env prod-env \
-	dev-up dev-wait dev-down dev-restart dev-migrate dev-size dev-backup dev-backup-list dev-sync-seeds dev-apply-patches dev-del-backup dev-restore \
+	dev-up dev-wait dev-down dev-restart dev-migrate dev-size dev-backup dev-backup-list dev-sync-seeds dev-apply-patches dev-del-backup dev-restore dev-restore-baseline dev-smoke-analytics \
 	prod-up prod-wait prod-down prod-restart prod-migrate prod-size prod-backup prod-backup-list prod-sync-seeds prod-apply-patches prod-del-backup prod-restore \
 	sales-pipe-status sales-pipe-plan sales-pipe-validate sales-pipe-write-local sales-pipe-resume sales-pipe-report \
 	sync-athena-dry sync-athena-dry-fast sync-athena-dry-full sync-athena-validate sync-athena-write-plan sync-athena-write-local \
@@ -48,6 +48,8 @@ help:
 	@echo "  make dev-backup"
 	@echo "  make dev-backup-list"
 	@echo "  make dev-restore [BACKUP_FILE=YYYY-MM-DD-HH-MM.dump]"
+	@echo "  make dev-restore-baseline [BASELINE_FILE=YYYY-MM-DD-HH-MM.dump]"
+	@echo "  make dev-smoke-analytics"
 	@echo "  make prod-up [RESTORE=1] [BACKUP_FILE=YYYY-MM-DD-HH-MM.dump]"
 	@echo "  make prod-down"
 	@echo "  make prod-restart"
@@ -146,6 +148,14 @@ dev-del-backup:
 dev-restore:
 	$(call require_env,dev)
 	@$(PROJECT_DIR)scripts/db_restore.sh "$(BACKUP_FILE)"
+
+dev-restore-baseline:
+	$(call require_env,dev)
+	@$(PROJECT_DIR)scripts/db_restore_baseline.sh "$(BASELINE_FILE)"
+
+dev-smoke-analytics:
+	$(call require_env,dev)
+	@$(PROJECT_DIR)scripts/db_smoke_analytics.sh
 
 prod-up:
 	$(call require_env,prod)
