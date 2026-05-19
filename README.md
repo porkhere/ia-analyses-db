@@ -1,6 +1,6 @@
 # ia-analyses-db
 
-最後更新：2026-05-19
+最後更新：2026-05-20
 
 註：2026-05-19 起，正式操作入口改為 `make dev-*` / `make prod-*`。本文若出現 `db-*`，除非明確標示為歷史紀錄，否則一律以新命名為準。
 
@@ -28,6 +28,14 @@
 - `pos_order_type_dim`: 訂單型態映射表。
 - `pos_payment_type_dim`: 付款型態映射表。
 - `pos_order_status_dim`: 訂單狀態語意表，固定 raw status code 與 sales / void / excluded bucket。
+
+## 2026-05-20 重新開始基準
+
+- `make dev-env`、`make dev-up`、`docker compose ps`、`make dev-migrate`、`make dev-size` 本輪均通過；目前 dev database size 約 `7.84 MB`
+- 當前 dev PostgreSQL 的核心表都存在，但 row count 顯示它是空資料基準：`ia_users = 0`、`pos_product_dim = 0`、`pos_branch_dim = 0`、`pos_sales_hourly_fact = 0`；只有 `pos_order_type_dim = 10`、`pos_payment_type_dim = 8`、`pos_order_status_dim = 4` 這些 seed 維度已存在
+- `make sales-pipe-status` 本輪雖可正常執行，但它讀的是 [state/sales_fact_pipe_state.json](state/sales_fact_pipe_state.json) 的歷史 controller state，不代表目前 dev PostgreSQL 已載入 31 天資料
+- `pos_product_dim` 目前沒有 `normal_sales_item` / `product_semantic_type` 一類的商品語意旗標；既有 QuickSight 盤點只看到 `cate_name = 其它` 類型排除，還不足以排除「雲林幣」這類支付 / 折抵 / 特殊交易項
+- 本輪短報告見 [reports/phase2c_restart_baseline_20260520.md](reports/phase2c_restart_baseline_20260520.md)
 
 ## 設計決策
 
