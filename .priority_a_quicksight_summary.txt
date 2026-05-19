@@ -1,0 +1,184 @@
+=== 50lan_每日營業額總計表 | b8394a24-7a6f-4b9d-b5ce-dd996981a005
+datasets:
+- 50lan_每日營業額總計表_結單日 (ca0e7324-8822-4f8b-9951-28f6bec2bf94) | import_mode=SPICE
+  source_tables: 50lan_new.branches, 50lan_new.orders_parquet
+  custom_sql[qty_total_by_branch]: SELECT ORD_TOTAL.tr_date, /*ORD_TOTAL.s_year, ORD_TOTAL.s_month, DATE(CONCAT(s_year,'-',s_month,'-',s_day)) AS DT,*/ SUBSTRING(ORD_TOTAL.branch_id, 1, 3) AS group_code, ORD_TOTAL.branch_id, BR.branch_name, CONCAT(ORD_TOTAL.branch_id,' ',BR.branch_name) AS options, SUM(ORD_TOTAL.total) AS total, SUM(ORD_TOTAL.qty) AS qty /* , SUM(CATEGORY_OTHER.total) AS total_for_other, SUM(CATEGORY_OTHER.qty) AS qty_for_other, SUM(ORD_TOTAL.total-CATEGORY_OTHER.total) AS total_deduct, SUM(ORD_TOTAL.qty-CATEGORY_OTHER.qty) AS qty_deduct*/ FROM( SELECT tr_date, branch_id, branch, SUM(total) AS total, SUM(qty_subtotal) AS qty/*, s_year, s_month, s_day*/ FROM "50lan_new".orders_parquet WHERE status = 1 AND DATE(t_open_date) >= DATE('2024-01-01') GROUP BY tr_date,branch_id,branch/*,s_year,s_month,s_day*/ ORDER BY /*s_year,s_month,s_day,*/branch_id) AS ORD_TOTAL LEFT JOIN "50lan_new".branches AS BR ON BR.branch_id = ORD_TOTAL.branch_id GROUP BY ORD_TOTAL.branch_id, BR.branch_name, tr_date/*, ORD_TOTAL.s_year, ORD_TOTAL.s_month, ORD_TOTAL.s_day*/ ORDER BY branch_id, tr_date/*, s_year, s_month, s_day*/
+  logical_tables: [{"logical_table_id": "18cb21d0-212e-4179-86ef-ae84feda6bec", "alias": "qty_total_by_branch", "source": {"PhysicalTableId": "18cb21d0-212e-4179-86ef-ae84feda6bec"}, "data_transforms": [{"ProjectOperation": {"ProjectedColumns": ["tr_date", "group_code", "branch_id", "branch_name", "options", "total", "qty"]}}]}]
+  output_columns: tr_date, group_code, branch_id, branch_name, options, total, qty
+- 50lan_每日營業額總計表_營業日 (0fd6d986-8d1a-4806-b78e-18a71a483f92) | import_mode=SPICE
+  source_tables: 50lan_new.branches, 50lan_new.orders_parquet
+  custom_sql[qty_total_by_branch]: SELECT ORD_TOTAL.sale_period, SUBSTRING(ORD_TOTAL.branch_id, 1, 3) AS group_code, ORD_TOTAL.branch_id, BR.branch_name, CONCAT(ORD_TOTAL.branch_id,' ',BR.branch_name) AS options, SUM(ORD_TOTAL.total) AS total, SUM(ORD_TOTAL.qty) AS qty FROM( SELECT DATE(sale_period) AS sale_period, branch_id, branch, SUM(total) AS total, SUM(qty_subtotal) AS qty FROM "50lan_new".orders_parquet WHERE status = 1 AND DATE(sale_period) >= DATE('2024-01-01') GROUP BY sale_period, branch_id, branch ORDER BY branch_id) AS ORD_TOTAL LEFT JOIN "50lan_new".branches AS BR ON ORD_TOTAL.branch_id = BR.branch_id GROUP BY ORD_TOTAL.branch_id, BR.branch_name, sale_period ORDER BY branch_id, sale_period
+  logical_tables: [{"logical_table_id": "18cb21d0-212e-4179-86ef-ae84feda6bec", "alias": "qty_total_by_branch", "source": {"PhysicalTableId": "18cb21d0-212e-4179-86ef-ae84feda6bec"}, "data_transforms": [{"ProjectOperation": {"ProjectedColumns": ["sale_period", "group_code", "branch_id", "branch_name", "options", "total", "qty"]}}]}]
+  output_columns: sale_period, group_code, branch_id, branch_name, options, total, qty
+- 50lan_new 所有 branches (f58b9651-eaa0-4aa5-9919-8ca4626f1a4b) | import_mode=SPICE
+  source_tables: 50lan_new.branches
+  custom_sql[50lan_new 所有 branches]: SELECT COALESCE(NULLIF(TRIM(b.group_code), ''), SUBSTRING(TRIM(b.branch_id), 1, 3)) AS group_code, TRIM(b.branch_id) AS branch_id, TRIM(b.branch_name) AS branch_name, CONCAT(TRIM(b.branch_id), ' ', TRIM(b.branch_name)) AS all_branches FROM "50lan_new".branches b WHERE b.status = 1 -- 如需顯示停用店，移除這行 ORDER BY branch_id
+  logical_tables: [{"logical_table_id": "71d6fdd0-a2cd-4b28-b03f-f11dd61fd51c", "alias": "50lan_new 所有 branches", "source": {"PhysicalTableId": "32eebb33-1130-4733-945e-e76e68da6278"}, "data_transforms": [{"ProjectOperation": {"ProjectedColumns": ["group_code", "branch_id", "branch_name", "all_branches"]}}]}]
+  output_columns: group_code, branch_id, branch_name, all_branches
+- 50lan_每日營業額總計表_結單日(舊) (6c8a7ff2-3b7d-4888-bc34-95cecd255cd9) | import_mode=SPICE
+  source_tables: 50lan.branches, 50lan.orders_parquet
+  custom_sql[qty_total_by_branch]: SELECT ORD_TOTAL.tr_date, SUBSTRING(ORD_TOTAL.branch_id, 1, 3) AS group_code, ORD_TOTAL.branch_id, BR.branch_name, CONCAT(ORD_TOTAL.branch_id,' ',BR.branch_name) AS options, SUM(ORD_TOTAL.total) AS total, SUM(ORD_TOTAL.qty) AS qty FROM( SELECT tr_date, branch_id, branch, SUM(total) AS total, SUM(qty_subtotal) AS qty FROM "50lan".orders_parquet WHERE branch_id LIKE 'TW%' AND t_open_date >= DATE('2021-01-01') AND status = 1 GROUP BY tr_date,branch_id,branch ORDER BY branch_id) AS ORD_TOTAL LEFT JOIN "50lan".branches AS BR ON ORD_TOTAL.branch_id = BR.branch_id GROUP BY ORD_TOTAL.branch_id, BR.branch_name, tr_date ORDER BY ORD_TOTAL.branch_id, tr_date
+  logical_tables: [{"logical_table_id": "18cb21d0-212e-4179-86ef-ae84feda6bec", "alias": "qty_total_by_branch", "source": {"PhysicalTableId": "18cb21d0-212e-4179-86ef-ae84feda6bec"}, "data_transforms": [{"ProjectOperation": {"ProjectedColumns": ["tr_date", "group_code", "branch_id", "branch_name", "options", "total", "qty"]}}]}]
+  output_columns: tr_date, group_code, branch_id, branch_name, options, total, qty
+- 50lan_每日營業額總計表_營業日(舊) (4c961756-a3f1-4bd0-8c69-a0bf45271ac3) | import_mode=SPICE
+  source_tables: 50lan.branches, 50lan.orders_parquet
+  custom_sql[qty_total_by_branch]: SELECT ORD_TOTAL.sale_period, SUBSTRING(ORD_TOTAL.branch_id, 1, 3) AS group_code, ORD_TOTAL.branch_id, BR.branch_name, CONCAT(ORD_TOTAL.branch_id,' ',BR.branch_name) AS options, SUM(ORD_TOTAL.total) AS total, SUM(ORD_TOTAL.qty) AS qty FROM( SELECT DATE(sale_period) AS sale_period, branch_id, SUM(total) AS total, SUM(qty_subtotal) AS qty FROM "50lan".orders_parquet WHERE branch_id LIKE 'TW%' AND t_open_date >= DATE('2021-01-01') AND status = 1 GROUP BY sale_period, branch_id ORDER BY branch_id) AS ORD_TOTAL LEFT JOIN "50lan".branches AS BR ON ORD_TOTAL.branch_id = BR.branch_id GROUP BY ORD_TOTAL.branch_id, BR.branch_name, sale_period ORDER BY ORD_TOTAL.branch_id, sale_period
+  logical_tables: [{"logical_table_id": "18cb21d0-212e-4179-86ef-ae84feda6bec", "alias": "qty_total_by_branch", "source": {"PhysicalTableId": "18cb21d0-212e-4179-86ef-ae84feda6bec"}, "data_transforms": [{"ProjectOperation": {"ProjectedColumns": ["sale_period", "group_code", "branch_id", "branch_name", "options", "total", "qty"]}}]}]
+  output_columns: sale_period, group_code, branch_id, branch_name, options, total, qty
+calculated_fields:
+- <none>
+filters:
+- CategoryFilter | dataset=50lan_tw_營業額by日_店家 | column=options | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "Branch", "NullOption": "NON_NULLS_ONLY"}} | scope=0f152ab2-c89a-45c5-aafa-f8d9ba05a01c:ALL_VISUALS
+- TimeRangeFilter | dataset=50lan_tw_營業額by日_店家 | column=tr_date | config={} | scope=0f152ab2-c89a-45c5-aafa-f8d9ba05a01c:ALL_VISUALS
+- TimeRangeFilter | dataset=50lan_tw_營業額by日_店家(營業日) | column=sale_period | config={} | scope=0f152ab2-c89a-45c5-aafa-f8d9ba05a01c:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_營業額by日_店家(營業日) | column=options | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "Branch", "NullOption": "NON_NULLS_ONLY"}} | scope=0f152ab2-c89a-45c5-aafa-f8d9ba05a01c:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_營業額by日_店家 | column=options | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "Branch", "NullOption": "NON_NULLS_ONLY"}} | scope=caf33fc7-929e-4abe-b0a8-b76a506cde6c:ALL_VISUALS
+- TimeRangeFilter | dataset=50lan_tw_營業額by日_店家 | column=tr_date | config={} | scope=caf33fc7-929e-4abe-b0a8-b76a506cde6c:ALL_VISUALS
+- TimeRangeFilter | dataset=50lan_tw_營業額by日_店家_結單日 | column=tr_date | config={} | scope=5dede219-770e-4602-9374-dfd3e3afe454:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_營業額by日_店家_結單日 | column=options | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "Branch", "NullOption": "NON_NULLS_ONLY"}} | scope=5dede219-770e-4602-9374-dfd3e3afe454:ALL_VISUALS
+- TimeRangeFilter | dataset=50lan_tw_營業額by日_店家_營業日 | column=sale_period | config={} | scope=eb963fe0-6c10-45ee-a274-d3f0732a4c3e:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_營業額by日_店家_營業日 | column=options | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "Branch", "NullOption": "NON_NULLS_ONLY"}} | scope=eb963fe0-6c10-45ee-a274-d3f0732a4c3e:ALL_VISUALS
+visuals:
+- sheet: 每日營業額總計表-營業日 (eb963fe0-6c10-45ee-a274-d3f0732a4c3e)
+  * PivotTableVisual | title=每日營業額總計表 #營業日 | dims=['營業日', '門店'] | measures=['total'] | dates=['營業日']
+- sheet: 每日營業額總計表-結單日 (5dede219-770e-4602-9374-dfd3e3afe454)
+  * PivotTableVisual | title=每日營業額總計表 #結單日 | dims=['結單日', '門店'] | measures=['total'] | dates=['結單日']
+- sheet: 每日營業額總計表-營業日 (舊) (0f152ab2-c89a-45c5-aafa-f8d9ba05a01c)
+  * PivotTableVisual | title=每日營業額總計表 #營業日 | dims=['營業日', '門店'] | measures=['total'] | dates=['營業日']
+  * InsightVisual | title= | dims=[] | measures=[] | dates=[]
+- sheet: 每日營業額總計表-結單日 (舊) (caf33fc7-929e-4abe-b0a8-b76a506cde6c)
+  * PivotTableVisual | title=每日營業額總計表 #結單日 | dims=['結單日期', '門店'] | measures=['每日營業額'] | dates=['結單日期']
+
+=== 50lan_產品銷售報表 | 5ceb0945-7705-4429-8d73-684037cd047a
+datasets:
+- 50lan_產品銷售報表 (1e2f8b58-707d-4b2f-b46b-0810fd11b99f) | import_mode=SPICE
+  source_tables: 50lan_new.branches, 50lan_new.order_items_parquet, 50lan_new.orders_parquet
+  custom_sql[50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家]: SELECT ORD.t_open_date, ORD.tr_date, SUBSTRING(ORD.branch_id, 1, 3) AS group_code, BR.branch_name, ORD.branch_id, CONCAT(ORD.branch_id,' ',BR.branch_name) AS options, ITEM.cate_name, ITEM.product_name, SUM(ITEM.current_qty)AS qty_subtotal, SUM(ITEM.current_subtotal) AS current_subtotal FROM "50lan_new".orders_parquet AS ORD LEFT JOIN "50lan_new".order_items_parquet AS ITEM ON ORD.t_open_date = ITEM.t_open_date AND ORD.id = ITEM.order_id AND ORD.terminal_no = ITEM.terminal_no LEFT JOIN "50lan_new".branches AS BR ON BR.branch_id = ORD.branch_id WHERE ORD.status = 1 AND DATE(ORD.t_open_date) >= DATE('2024-01-01') GROUP BY ORD.t_open_date, ORD.tr_date, ORD.branch_id, BR.branch_name, ITEM.cate_name, ITEM.product_name ORDER BY ORD.t_open_date, ORD.tr_date, ORD.branch_id, BR.branch_name, ITEM.cate_name, ITEM.product_name
+  logical_tables: [{"logical_table_id": "cdac6309-a647-47e7-b8d4-9e46cbf0fa22", "alias": "50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家", "source": {"PhysicalTableId": "cdac6309-a647-47e7-b8d4-9e46cbf0fa22"}, "data_transforms": [{"ProjectOperation": {"ProjectedColumns": ["t_open_date", "tr_date", "group_code", "branch_name", "branch_id", "options", "cate_name", "product_name", "qty_subtotal", "current_subtotal"]}}]}]
+  output_columns: t_open_date, tr_date, group_code, branch_name, branch_id, options, cate_name, product_name, qty_subtotal, current_subtotal
+- 50lan_產品銷售報表(舊) (1ed248c2-d6aa-4d2c-a695-e2849b825341) | import_mode=SPICE
+  source_tables: 50lan.branches, 50lan.order_items_parquet, 50lan.orders_parquet
+  custom_sql[50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家]: SELECT ORD.t_open_date, ORD.tr_date, SUBSTRING(ORD.branch_id, 1, 3) AS group_code, BR.branch_name, ORD.branch_id, CONCAT(ORD.branch_id,' ',BR.branch_name) AS options, ITEM.cate_name, ITEM.product_name, SUM(ITEM.current_qty)AS qty_subtotal, SUM(ITEM.current_subtotal) AS current_subtotal FROM "50lan".orders_parquet AS ORD LEFT JOIN "50lan".order_items_parquet AS ITEM ON ORD.t_open_date = ITEM.t_open_date AND ORD.id = ITEM.order_id LEFT JOIN "50lan".branches AS BR ON BR.branch_id= ORD.branch_id WHERE ORD.status = 1 AND ORD.t_open_date >= date('2021-01-01') AND ORD.branch_id LIKE 'TW%' GROUP BY ORD.t_open_date, ORD.tr_date, ORD.branch_id, BR.branch_name, ITEM.cate_name, ITEM.product_name ORDER BY ORD.t_open_date, ORD.tr_date, ORD.branch_id, BR.branch_name, ITEM.cate_name, ITEM.product_name
+  logical_tables: [{"logical_table_id": "cdac6309-a647-47e7-b8d4-9e46cbf0fa22", "alias": "50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家", "source": {"PhysicalTableId": "cdac6309-a647-47e7-b8d4-9e46cbf0fa22"}, "data_transforms": [{"ProjectOperation": {"ProjectedColumns": ["t_open_date", "tr_date", "group_code", "branch_name", "branch_id", "options", "cate_name", "product_name", "qty_subtotal", "current_subtotal"]}}]}]
+  output_columns: t_open_date, tr_date, group_code, branch_name, branch_id, options, cate_name, product_name, qty_subtotal, current_subtotal
+- 50lan_new 所有 branches (f58b9651-eaa0-4aa5-9919-8ca4626f1a4b) | import_mode=SPICE
+  source_tables: 50lan_new.branches
+  custom_sql[50lan_new 所有 branches]: SELECT COALESCE(NULLIF(TRIM(b.group_code), ''), SUBSTRING(TRIM(b.branch_id), 1, 3)) AS group_code, TRIM(b.branch_id) AS branch_id, TRIM(b.branch_name) AS branch_name, CONCAT(TRIM(b.branch_id), ' ', TRIM(b.branch_name)) AS all_branches FROM "50lan_new".branches b WHERE b.status = 1 -- 如需顯示停用店，移除這行 ORDER BY branch_id
+  logical_tables: [{"logical_table_id": "71d6fdd0-a2cd-4b28-b03f-f11dd61fd51c", "alias": "50lan_new 所有 branches", "source": {"PhysicalTableId": "32eebb33-1130-4733-945e-e76e68da6278"}, "data_transforms": [{"ProjectOperation": {"ProjectedColumns": ["group_code", "branch_id", "branch_name", "all_branches"]}}]}]
+  output_columns: group_code, branch_id, branch_name, all_branches
+calculated_fields:
+- qty_percentage | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | expr=percentOfTotal(sum({qty_subtotal}))
+- qty_percentage_by_date_id | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | expr=percentOfTotal(sum({qty_subtotal}),[{tr_date},{branch_id}])
+- revenue_percentage | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | expr=percentOfTotal(sum({current_subtotal}))
+- qty_percentage | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | expr=percentOfTotal(sum({qty_subtotal}))
+- qty_percentage_by_date_id | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | expr=percentOfTotal(sum({qty_subtotal}),[{tr_date},{branch_id}])
+- revenue_percentage | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | expr=percentOfTotal(sum({current_subtotal}))
+filters:
+- TimeRangeFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=t_open_date | config={} | scope=13fe9ca7-1125-4606-9902-0a1ba57f7020:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=options | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "branch", "NullOption": "NON_NULLS_ONLY"}} | scope=13fe9ca7-1125-4606-9902-0a1ba57f7020:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=group_code | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "group", "NullOption": "NON_NULLS_ONLY"}} | scope=13fe9ca7-1125-4606-9902-0a1ba57f7020:ALL_VISUALS
+- TimeRangeFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=t_open_date | config={} | scope=3fc52a53-fa3f-4f2a-a41e-ea8505ddb7f8:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=branch_id | config={"FilterListConfiguration": {"MatchOperator": "CONTAINS", "SelectAllOptions": "FILTER_ALL_VALUES", "NullOption": "NON_NULLS_ONLY"}} | scope=3fc52a53-fa3f-4f2a-a41e-ea8505ddb7f8:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=options | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "branch", "NullOption": "NON_NULLS_ONLY"}} | scope=3fc52a53-fa3f-4f2a-a41e-ea8505ddb7f8:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=group_code | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "group", "NullOption": "NON_NULLS_ONLY"}} | scope=3fc52a53-fa3f-4f2a-a41e-ea8505ddb7f8:ALL_VISUALS
+- TimeRangeFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=tr_date | config={} | scope=bf4d0fe5-bdc3-471a-ad89-33175121f4f8:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=options | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "branch", "NullOption": "NON_NULLS_ONLY"}} | scope=bf4d0fe5-bdc3-471a-ad89-33175121f4f8:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=cate_name | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "category", "NullOption": "NON_NULLS_ONLY"}} | scope=bf4d0fe5-bdc3-471a-ad89-33175121f4f8:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=product_name | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "production", "NullOption": "NON_NULLS_ONLY"}} | scope=bf4d0fe5-bdc3-471a-ad89-33175121f4f8:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=group_code | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "group", "NullOption": "NON_NULLS_ONLY"}} | scope=bf4d0fe5-bdc3-471a-ad89-33175121f4f8:ALL_VISUALS
+- TimeRangeFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=tr_date | config={} | scope=d59f62a5-3f32-4cd8-abdc-a9e5788c5620:SELECTED_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=options | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "branch", "NullOption": "NON_NULLS_ONLY"}} | scope=d59f62a5-3f32-4cd8-abdc-a9e5788c5620:SELECTED_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=cate_name | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "category", "NullOption": "NON_NULLS_ONLY"}} | scope=d59f62a5-3f32-4cd8-abdc-a9e5788c5620:SELECTED_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=product_name | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "production", "NullOption": "NON_NULLS_ONLY"}} | scope=d59f62a5-3f32-4cd8-abdc-a9e5788c5620:SELECTED_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=group_code | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "group", "NullOption": "NON_NULLS_ONLY"}} | scope=d59f62a5-3f32-4cd8-abdc-a9e5788c5620:SELECTED_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=product_name | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "productOne", "NullOption": "NON_NULLS_ONLY"}} | scope=d59f62a5-3f32-4cd8-abdc-a9e5788c5620:ALL_VISUALS
+- TimeRangeFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=tr_date | config={} | scope=9a57513a-f489-426b-a926-d3505ddc6cdb:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=options | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "branch", "NullOption": "NON_NULLS_ONLY"}} | scope=9a57513a-f489-426b-a926-d3505ddc6cdb:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=product_name | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "productOne", "NullOption": "NON_NULLS_ONLY"}} | scope=9a57513a-f489-426b-a926-d3505ddc6cdb:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家New custom SQL | column=product_name | config={"FilterListConfiguration": {"MatchOperator": "DOES_NOT_CONTAIN", "NullOption": "ALL_VALUES"}} | scope=bf4d0fe5-bdc3-471a-ad89-33175121f4f8:SELECTED_VISUALS
+- TimeRangeFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=tr_date | config={} | scope=6cfc6025-998d-44d4-b7eb-fdd8f92dca2a:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=options | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "branch", "NullOption": "NON_NULLS_ONLY"}} | scope=6cfc6025-998d-44d4-b7eb-fdd8f92dca2a:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=cate_name | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "category", "NullOption": "NON_NULLS_ONLY"}} | scope=6cfc6025-998d-44d4-b7eb-fdd8f92dca2a:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=product_name | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "production", "NullOption": "NON_NULLS_ONLY"}} | scope=6cfc6025-998d-44d4-b7eb-fdd8f92dca2a:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=product_name | config={"FilterListConfiguration": {"MatchOperator": "DOES_NOT_CONTAIN", "NullOption": "ALL_VALUES"}} | scope=6cfc6025-998d-44d4-b7eb-fdd8f92dca2a:SELECTED_VISUALS
+- TimeRangeFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=tr_date | config={} | scope=82c09812-54cd-4e59-8a52-2f1c669f7aae:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=options | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "branch", "NullOption": "NON_NULLS_ONLY"}} | scope=82c09812-54cd-4e59-8a52-2f1c669f7aae:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=product_name | config={"FilterListConfiguration": {"MatchOperator": "DOES_NOT_CONTAIN", "NullOption": "ALL_VALUES"}} | scope=82c09812-54cd-4e59-8a52-2f1c669f7aae:SELECTED_VISUALS
+- TimeRangeFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=tr_date | config={} | scope=1f147698-2652-40ae-91cd-07b109cefc66:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=options | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "branch", "NullOption": "NON_NULLS_ONLY"}} | scope=1f147698-2652-40ae-91cd-07b109cefc66:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=product_name | config={"FilterListConfiguration": {"MatchOperator": "DOES_NOT_CONTAIN", "NullOption": "ALL_VALUES"}} | scope=1f147698-2652-40ae-91cd-07b109cefc66:SELECTED_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=product_name | config={"FilterListConfiguration": {"MatchOperator": "DOES_NOT_CONTAIN", "NullOption": "ALL_VALUES"}} | scope=1f147698-2652-40ae-91cd-07b109cefc66:SELECTED_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=product_name | config={"FilterListConfiguration": {"MatchOperator": "DOES_NOT_CONTAIN", "NullOption": "ALL_VALUES"}} | scope=1f147698-2652-40ae-91cd-07b109cefc66:SELECTED_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=cate_name | config={"FilterListConfiguration": {"MatchOperator": "DOES_NOT_CONTAIN", "CategoryValues": ["其它"], "NullOption": "NON_NULLS_ONLY"}} | scope=1f147698-2652-40ae-91cd-07b109cefc66:SELECTED_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=product_name | config={"FilterListConfiguration": {"MatchOperator": "DOES_NOT_CONTAIN", "NullOption": "ALL_VALUES"}} | scope=1f147698-2652-40ae-91cd-07b109cefc66:SELECTED_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=product_name | config={"FilterListConfiguration": {"MatchOperator": "DOES_NOT_CONTAIN", "NullOption": "ALL_VALUES"}} | scope=1f147698-2652-40ae-91cd-07b109cefc66:SELECTED_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=cate_name | config={"FilterListConfiguration": {"MatchOperator": "DOES_NOT_CONTAIN", "CategoryValues": ["其它"], "NullOption": "NON_NULLS_ONLY"}} | scope=1f147698-2652-40ae-91cd-07b109cefc66:SELECTED_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=product_name | config={"FilterListConfiguration": {"MatchOperator": "DOES_NOT_CONTAIN", "NullOption": "ALL_VALUES"}} | scope=1f147698-2652-40ae-91cd-07b109cefc66:SELECTED_VISUALS
+- CategoryFilter | dataset=50lan_tw_產品銷售報表_產品類別_杯數_佔比by日_店家 | column=cate_name | config={"FilterListConfiguration": {"MatchOperator": "DOES_NOT_CONTAIN", "CategoryValues": ["其它"], "NullOption": "NON_NULLS_ONLY"}} | scope=1f147698-2652-40ae-91cd-07b109cefc66:SELECTED_VISUALS
+visuals:
+- sheet: 分析圖表 (1f147698-2652-40ae-91cd-07b109cefc66)
+  * BarChartVisual | title=銷售杯數前十名品項 在 總銷售杯數前五分店 的銷售狀況 # 結單日 | dims=['options', 'product_name'] | measures=['qty_percentage_by_date_id', 'qty_subtotal', 'revenue_percentage'] | dates=['qty_percentage_by_date_id']
+  * BarChartVisual | title=門店銷售杯數統計 # 結單日 | dims=['options'] | measures=['qty_subtotal'] | dates=[]
+  * PieChartVisual | title=產品銷售原始售額圓餅圖(TOP10) # 結單日 | dims=['product_name'] | measures=['current_subtotal'] | dates=[]
+  * PieChartVisual | title=產品部門銷售原始售額圓餅圖(TOP10) # 結單日 | dims=['cate_name'] | measures=['current_subtotal'] | dates=[]
+  * PieChartVisual | title=產品銷售杯數圓餅圖(TOP10) # 結單日 | dims=['product_name'] | measures=['qty_subtotal'] | dates=[]
+  * PieChartVisual | title=產品部門銷售杯數圓餅圖(TOP10) # 結單日 | dims=['cate_name'] | measures=['qty_subtotal'] | dates=[]
+- sheet: 商品銷售門店統計 (82c09812-54cd-4e59-8a52-2f1c669f7aae)
+  * PivotTableVisual | title=產品銷售門店統計 # 結單日 | dims=['branch_id', '產品類別', '結單日', '門店'] | measures=['佔比', '杯數'] | dates=['佔比', '結單日']
+- sheet: 商品銷售統計 (6cfc6025-998d-44d4-b7eb-fdd8f92dca2a)
+  * TableVisual | title=商品銷售統計 # 結單日 ＊銷售金額為原始售額不含折扣 | dims=['產品名稱', '產品部門'] | measures=['數量佔比', '金額佔比', '銷售數量', '銷售金額 (不含折扣)'] | dates=[]
+- sheet: 門店銷售查詢 (9a57513a-f489-426b-a926-d3505ddc6cdb)
+  * TableVisual | title=各門店銷售狀況查詢 （必須指定商品) # 結單日 ＊銷售金額為原始售額不含折扣 | dims=['產品名稱', '產品部門', '門店'] | measures=['數量佔比', '金額佔比', '銷售數量', '銷售金額 (不含折扣)'] | dates=[]
+- sheet: 分析圖表 (舊) (13fe9ca7-1125-4606-9902-0a1ba57f7020)
+  * PieChartVisual | title=產品部門銷售杯數圓餅圖(TOP10) # 結單日 | dims=['cate_name'] | measures=['qty_subtotal'] | dates=[]
+- sheet: 商品銷售門店統計 (舊) (3fc52a53-fa3f-4f2a-a41e-ea8505ddb7f8)
+  * PivotTableVisual | title=產品銷售門店統計 # 結單日 | dims=['branch_id', '產品部門', '結單日', '門店'] | measures=['佔比', '杯數'] | dates=['佔比', '結單日']
+- sheet: 商品銷售統計 (舊) (bf4d0fe5-bdc3-471a-ad89-33175121f4f8)
+  * TableVisual | title=商品銷售統計 # 結單日 ＊銷售金額為原始售額不含折扣 | dims=['產品名稱', '產品部門'] | measures=['數量佔比', '金額佔比', '銷售數量', '銷售金額 (不含折扣)'] | dates=[]
+- sheet: 門店銷售查詢 (舊) (d59f62a5-3f32-4cd8-abdc-a9e5788c5620)
+  * TableVisual | title=各門店銷售狀況查詢 （必須指定商品) # 結單日 ＊銷售金額為原始售額不含折扣 | dims=['產品名稱', '產品部門', '門店'] | measures=['數量佔比', '金額佔比', '銷售數量', '銷售金額 (不含折扣)'] | dates=[]
+
+=== 50lan_付款別報表 | 688f17a4-6250-4ea2-9157-6ef1c6044d6f
+datasets:
+- 50lan_付款別報表(舊) (9a2baaee-5231-4532-a0a5-a6b1a87db5dc) | import_mode=SPICE
+  source_tables: 50lan.branches, 50lan.order_payments_parquet, 50lan.orders_parquet
+  custom_sql[report order payments prd]: SELECT ORD.t_open_date, ORD.tr_date, SUBSTRING(ORD.branch_id, 1, 3) AS group_code, CONCAT(ORD.branch_id,' ',BR.branch_name) AS options, ORD.branch_id, BR.branch_name, PAYMENT.name, PAYMENT.memo1, SUM(PAYMENT.amount-PAYMENT.change) as amount FROM "50lan".orders_parquet AS ORD LEFT JOIN "50lan".order_payments_parquet AS PAYMENT ON ORD.t_open_date = PAYMENT.t_open_date AND ORD.id = PAYMENT.order_id LEFT JOIN "50lan".branches BR ON BR.branch_id = ORD.branch_id WHERE ORD.t_open_date >= DATE('2021-01-01') AND ORD.status = 1 AND ORD.branch_id LIKE 'TW%' GROUP BY ORD.t_open_date, ORD.tr_date, ORD.branch_id, BR.branch_name, PAYMENT.name, PAYMENT.memo1 ORDER BY ORD.t_open_date, ORD.tr_date, ORD.branch_id, BR.branch_name, PAYMENT.name, PAYMENT.memo1
+  logical_tables: [{"logical_table_id": "3058839f-a673-46cf-9c4b-8b5866496a2e", "alias": "report order payments prd", "source": {"PhysicalTableId": "3058839f-a673-46cf-9c4b-8b5866496a2e"}, "data_transforms": [{"ProjectOperation": {"ProjectedColumns": ["t_open_date", "tr_date", "group_code", "options", "branch_id", "branch_name", "name", "memo1", "amount", "calcamount"]}}]}]
+  output_columns: t_open_date, tr_date, group_code, options, branch_id, branch_name, name, memo1, amount, calcamount
+- 50lan_付款別報表 (9bfe7743-986c-429c-82ea-6e096d03c387) | import_mode=SPICE
+  source_tables: 50lan_new.branches, 50lan_new.order_payments_parquet, 50lan_new.orders_parquet
+  custom_sql[report order payments prd]: SELECT ORD.t_open_date, ORD.tr_date, SUBSTRING(ORD.branch_id, 1, 3) AS group_code, CONCAT(ORD.branch_id,' ',BR.branch_name) AS options, ORD.branch_id, BR.branch_name, PAYMENT.name, PAYMENT.memo1, SUM(PAYMENT.amount-PAYMENT.change) as amount FROM "50lan_new".orders_parquet AS ORD LEFT JOIN "50lan_new".order_payments_parquet AS PAYMENT ON ORD.t_open_date = PAYMENT.t_open_date AND ORD.id = PAYMENT.order_id AND ORD.terminal_no = PAYMENT.terminal_no LEFT JOIN "50lan_new".branches AS BR ON BR.branch_id = ORD.branch_id WHERE ORD.status = 1 AND DATE(ORD.tr_date) >= DATE('2024-01-01') GROUP BY ORD.t_open_date, ORD.tr_date, ORD.branch_id, BR.branch_name, PAYMENT.name, PAYMENT.memo1 ORDER BY ORD.t_open_date, ORD.tr_date, ORD.branch_id, BR.branch_name, PAYMENT.name, PAYMENT.memo1
+  logical_tables: [{"logical_table_id": "3058839f-a673-46cf-9c4b-8b5866496a2e", "alias": "report order payments prd", "source": {"PhysicalTableId": "3058839f-a673-46cf-9c4b-8b5866496a2e"}, "data_transforms": [{"ProjectOperation": {"ProjectedColumns": ["t_open_date", "tr_date", "group_code", "options", "branch_id", "branch_name", "name", "memo1", "amount", "calcamount"]}}]}]
+  output_columns: t_open_date, tr_date, group_code, options, branch_id, branch_name, name, memo1, amount, calcamount
+- 50lan_new 所有 branches (f58b9651-eaa0-4aa5-9919-8ca4626f1a4b) | import_mode=SPICE
+  source_tables: 50lan_new.branches
+  custom_sql[50lan_new 所有 branches]: SELECT COALESCE(NULLIF(TRIM(b.group_code), ''), SUBSTRING(TRIM(b.branch_id), 1, 3)) AS group_code, TRIM(b.branch_id) AS branch_id, TRIM(b.branch_name) AS branch_name, CONCAT(TRIM(b.branch_id), ' ', TRIM(b.branch_name)) AS all_branches FROM "50lan_new".branches b WHERE b.status = 1 -- 如需顯示停用店，移除這行 ORDER BY branch_id
+  logical_tables: [{"logical_table_id": "71d6fdd0-a2cd-4b28-b03f-f11dd61fd51c", "alias": "50lan_new 所有 branches", "source": {"PhysicalTableId": "32eebb33-1130-4733-945e-e76e68da6278"}, "data_transforms": [{"ProjectOperation": {"ProjectedColumns": ["group_code", "branch_id", "branch_name", "all_branches"]}}]}]
+  output_columns: group_code, branch_id, branch_name, all_branches
+calculated_fields:
+- amount_percentage | dataset=50lan_tw_付款別報表by日_店家 | expr=percentOfTotal(sum(amount),[{tr_date},{branch_id}])
+- amount_percentage | dataset=report order payments prd | expr=percentOfTotal(sum(amount),[{tr_date},{branch_id}])
+filters:
+- TimeRangeFilter | dataset=report order payments prd | column=tr_date | config={} | scope=e9cf9341-79fa-448d-b5dc-5ada0abfe289:ALL_VISUALS
+- TimeRangeFilter | dataset=report order payments prd | column=tr_date | config={} | scope=a7b97ded-746a-440e-bd18-b104c7aa51d8:ALL_VISUALS
+- CategoryFilter | dataset=report order payments prd | column=name | config={"FilterListConfiguration": {"MatchOperator": "DOES_NOT_CONTAIN", "NullOption": "ALL_VALUES"}} | scope=e9cf9341-79fa-448d-b5dc-5ada0abfe289:SELECTED_VISUALS
+- CategoryFilter | dataset=report order payments prd | column=options | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "branch", "NullOption": "NON_NULLS_ONLY"}} | scope=e9cf9341-79fa-448d-b5dc-5ada0abfe289:ALL_VISUALS
+- CategoryFilter | dataset=report order payments prd | column=options | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "branch", "NullOption": "NON_NULLS_ONLY"}} | scope=a7b97ded-746a-440e-bd18-b104c7aa51d8:ALL_VISUALS
+- CategoryFilter | dataset=report order payments prd | column=name | config={"FilterListConfiguration": {"MatchOperator": "DOES_NOT_CONTAIN", "NullOption": "ALL_VALUES"}} | scope=a7b97ded-746a-440e-bd18-b104c7aa51d8:SELECTED_VISUALS
+- TimeRangeFilter | dataset=50lan_tw_付款別報表by日_店家 | column=tr_date | config={} | scope=7d842074-f6d3-448d-8b61-f7d2679bb613:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_付款別報表by日_店家 | column=options | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "branch", "NullOption": "NON_NULLS_ONLY"}} | scope=7d842074-f6d3-448d-8b61-f7d2679bb613:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_付款別報表by日_店家 | column=name | config={"FilterListConfiguration": {"MatchOperator": "DOES_NOT_CONTAIN", "NullOption": "ALL_VALUES"}} | scope=7d842074-f6d3-448d-8b61-f7d2679bb613:SELECTED_VISUALS
+- TimeRangeFilter | dataset=50lan_tw_付款別報表by日_店家 | column=tr_date | config={} | scope=4575120d-8839-40c0-9597-a48c89394547:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_付款別報表by日_店家 | column=options | config={"CustomFilterConfiguration": {"MatchOperator": "EQUALS", "ParameterName": "branch", "NullOption": "NON_NULLS_ONLY"}} | scope=4575120d-8839-40c0-9597-a48c89394547:ALL_VISUALS
+- CategoryFilter | dataset=50lan_tw_付款別報表by日_店家 | column=name | config={"FilterListConfiguration": {"MatchOperator": "DOES_NOT_CONTAIN", "NullOption": "ALL_VALUES"}} | scope=4575120d-8839-40c0-9597-a48c89394547:SELECTED_VISUALS
+visuals:
+- sheet: 圖表分析 (4575120d-8839-40c0-9597-a48c89394547)
+  * PieChartVisual | title=付款別佔比 # 結單日 | dims=['name'] | measures=['amount'] | dates=[]
+  * InsightVisual | title= | dims=[] | measures=[] | dates=[]
+- sheet: 數據資料 (7d842074-f6d3-448d-8b61-f7d2679bb613)
+  * PivotTableVisual | title=付款別報表 # 結單日 | dims=['branch_id', '付款別', '結單日', '門店'] | measures=['佔比', '金額'] | dates=['結單日']
+- sheet: 圖表分析 (舊) (e9cf9341-79fa-448d-b5dc-5ada0abfe289)
+  * PieChartVisual | title=付款別佔比 # 結單日 | dims=['name'] | measures=['amount'] | dates=[]
+- sheet: 數據資料 (舊) (a7b97ded-746a-440e-bd18-b104c7aa51d8)
+  * PivotTableVisual | title=付款別報表 # 結單日 | dims=['付款別', '分店代號', '結單日', '門店'] | measures=['佔比', '金額'] | dates=['結單日']
+

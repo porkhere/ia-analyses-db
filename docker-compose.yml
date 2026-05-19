@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: ${COMPOSE_PROJECT_NAME:-ia-analyses-db}-postgres
+    restart: unless-stopped
+    ports:
+      - "${PGPORT:-1230}:5432"
+    environment:
+      POSTGRES_DB: ${PGDATABASE:-ia_analyses}
+      POSTGRES_USER: ${PGUSER:-elijackson}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-change_me}
+      TZ: ${TZ:-Asia/Taipei}
+      PGTZ: ${PGTZ:-Asia/Taipei}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+      - ./backup:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  adminer:
+    image: adminer:4
+    container_name: ${COMPOSE_PROJECT_NAME:-ia-analyses-db}-adminer
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${ADMINER_PORT:-1231}:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+
+volumes:
+  postgres_data:
