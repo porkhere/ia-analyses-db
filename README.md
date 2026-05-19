@@ -37,6 +37,16 @@
 - `pos_product_dim` 目前沒有 `normal_sales_item` / `product_semantic_type` 一類的商品語意旗標；既有 QuickSight 盤點只看到 `cate_name = 其它` 類型排除，還不足以排除「雲林幣」這類支付 / 折抵 / 特殊交易項
 - 本輪短報告見 [reports/phase2c_restart_baseline_20260520.md](reports/phase2c_restart_baseline_20260520.md)
 
+## 2026-05-20 最小 analytics baseline 設計結論
+
+- 目前 repo 沒有已提交的非空 analytics baseline 載體；`backup/dev/`、`backup/prod/` 只有 `.gitkeep`
+- `db/init/001_schema.sql` 與 `make dev-sync-seeds` 只會建立 schema 與 canonical seed，不會產生非空 `pos_product_dim`、`pos_branch_dim`、`pos_sales_hourly_fact`
+- 現有 summary report 與 state 只保存摘要，不是可 restore 的資料快照
+- 建議方案採 `hybrid`：以「tracked minimal backup dump」作為 restore 載體，再配 baseline manifest 與 smoke validation 降低 drift
+- tracked baseline dump 應放在 `backup/dev/baseline/`，避免被一般 `dev-backup` 輪替或 `dev-del-backup ALL=1` 誤刪
+- 下一輪最小實作範圍：建立一份小日期窗的 tracked dev baseline dump、加上 manifest、補 `make dev-restore-baseline` 與 `make dev-smoke-analytics`
+- 詳細設計見 [文件/minimal_analytics_baseline_plan.md](文件/minimal_analytics_baseline_plan.md)
+
 ## 設計決策
 
 ### 為什麼現在不是單一 fact 模型
@@ -374,6 +384,7 @@ make sync-sales-dims OWNER_USER_KEY=demo-owner OWNER_USER_ID=1 START_DATE=2025-0
 
 - 備份檔固定放在 `backup/dev/` 或 `backup/prod/`
 - 備份檔名格式固定為 `YYYY-MM-DD-HH-MM.dump`，每個環境最多保留 5 份，超過時會自動刪除最舊檔
+- 若要提交可重現的 dev analytics baseline，建議放在 `backup/dev/baseline/` 子目錄，不和一般輪替備份混放
 - `make dev-size` / `make prod-size` 會用 PostgreSQL 內建函式計算當前資料庫大小，單位 MB
 - `make dev-backup` / `make prod-backup` 會建立目前環境的 `.dump` 備份
 - `make dev-backup-list` / `make prod-backup-list` 會依新到舊列出目前環境可還原備份與大小
@@ -382,6 +393,7 @@ make sync-sales-dims OWNER_USER_KEY=demo-owner OWNER_USER_ID=1 START_DATE=2025-0
 - `make dev-restore` / `make prod-restore` 會先列出備份、接受數字選擇，輸入 `n` 可退出
 - restore 屬高風險操作，執行前會先自動做一份當前環境 backup，完成後再執行基本 PostgreSQL 驗證
 - `make dev-up RESTORE=1` / `make prod-up RESTORE=1` 會在容器啟動後進入 restore 流程，然後自動補跑 migrate
+- 下一輪預計補 `make dev-restore-baseline` 與 `make dev-smoke-analytics`，讓 clone 後的最小 analytics smoke test 可直接重建
 
 ## 下一階段預計補上
 
