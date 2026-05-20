@@ -1,6 +1,6 @@
 # ia-analyses-db
 
-更新日期：2026-05-20-16:11
+更新日期：2026-05-20-17:40
 校準日期：2026-05-20-16:11
 
 註：2026-05-19 起，正式操作入口改為 `make dev-*` / `make prod-*`。本文若出現 `db-*`，除非明確標示為歷史紀錄，否則一律以新命名為準。
@@ -36,23 +36,30 @@
 - `pos_payment_type_dim`: 付款型態映射表。
 - `pos_order_status_dim`: 訂單狀態語意表，固定 raw status code 與 sales / void / excluded bucket。
 
-## 2026-05-20 重新開始基準
+## 2026-05-20 全 repo 更新模式 runtime 對齊結果
+
+- 依 `agent-rule` 第 2.6 條與第 5.6 條完成 dev runtime 對齊：`make dev-env`、`make dev-up`、`make dev-backup`、`make dev-restore BACKUP_FILE=2026-05-20-17-37-align.dump`、`make dev-migrate`、`make dev-smoke-analytics` 均通過
+- 當前 dev PostgreSQL 核心表 row count 為：`pos_product_dim = 581`、`pos_branch_dim = 278`、`pos_sales_hourly_fact = 3698110`
+- 本輪已建立一般 dev restore backup [backup/dev/2026-05-20-17-37.dump](backup/dev/2026-05-20-17-37.dump)；它可供 `make dev-restore` 使用，但不取代 `backup/dev/baseline/` 的 tracked baseline dump 治理
+- `make dev-smoke-analytics` 已通過；關鍵字排除後 leaderboard row count = `580`
+
+## 2026-05-20 16:11 重新開始基準（歷史）
 
 - `make dev-env`、`make dev-up`、`docker compose ps`、`make dev-migrate`、`make dev-size` 本輪均通過；目前 dev database size 約 `7.84 MB`
-- 當前 dev PostgreSQL 的核心表都存在，但 row count 顯示它是空資料基準：`ia_users = 0`、`pos_product_dim = 0`、`pos_branch_dim = 0`、`pos_sales_hourly_fact = 0`；只有 `pos_order_type_dim = 10`、`pos_payment_type_dim = 8`、`pos_order_status_dim = 4` 這些 seed 維度已存在
+- 當時 dev PostgreSQL 的核心表都存在，但 row count 顯示它是空資料基準：`ia_users = 0`、`pos_product_dim = 0`、`pos_branch_dim = 0`、`pos_sales_hourly_fact = 0`；只有 `pos_order_type_dim = 10`、`pos_payment_type_dim = 8`、`pos_order_status_dim = 4` 這些 seed 維度已存在
 - `make sales-pipe-status` 本輪雖可正常執行，但它讀的是 [state/sales_fact_pipe_state.json](state/sales_fact_pipe_state.json) 的歷史 controller state，不代表目前 dev PostgreSQL 已載入 31 天資料
 - `pos_product_dim` 目前沒有 `normal_sales_item` / `product_semantic_type` 一類的商品語意旗標；既有 QuickSight 盤點只看到 `cate_name = 其它` 類型排除，還不足以排除「雲林幣」這類支付 / 折抵 / 特殊交易項
 - 本輪短報告見 [reports/phase2c_restart_baseline_20260520.md](reports/phase2c_restart_baseline_20260520.md)
 
-## 2026-05-20 最小 analytics baseline 設計結論
+## 2026-05-20 16:11 最小 analytics baseline 設計結論（歷史）
 
-- 目前 repo 沒有已提交的非空 analytics baseline 載體；`backup/dev/`、`backup/prod/` 只有 `.gitkeep`
+- 在 2026-05-20 16:11 的盤點時，repo 沒有已提交的非空 analytics baseline 載體；當時 `backup/dev/`、`backup/prod/` 只有 `.gitkeep`
 - `db/init/001_schema.sql` 與 `make dev-sync-seeds` 只會建立 schema 與 canonical seed，不會產生非空 `pos_product_dim`、`pos_branch_dim`、`pos_sales_hourly_fact`
 - 現有 summary report 與 state 只保存摘要，不是可 restore 的資料快照
 - 建議方案採 `hybrid`：以「tracked minimal backup dump」作為 restore 載體，再配 baseline manifest 與 smoke validation 降低 drift
 - tracked baseline dump 應放在 `backup/dev/baseline/`，避免被一般 `dev-backup` 輪替或 `dev-del-backup ALL=1` 誤刪
 - 本輪已先建立 `backup/dev/baseline/manifest.md`、`make dev-restore-baseline` 與 `make dev-smoke-analytics`
-- 由於目前 repo 內沒有任何可用 dump，且本機 dev DB 查核仍為空資料 baseline，本輪沒有提交 baseline dump；`make dev-restore-baseline` 目前會明確提示缺少 tracked baseline dump，`make dev-smoke-analytics` 目前會明確回報 `smoke failed`
+- 在該次盤點時，由於 repo 內沒有任何可用 dump，且本機 dev DB 查核仍為空資料 baseline，因此沒有提交 baseline dump；`make dev-restore-baseline` 會明確提示缺少 tracked baseline dump，`make dev-smoke-analytics` 會明確回報 `smoke failed`
 - 詳細設計見 [文件/minimal_analytics_baseline_plan.md](文件/minimal_analytics_baseline_plan.md)
 
 ## 2026-05-20 analytics productization gap 結論
