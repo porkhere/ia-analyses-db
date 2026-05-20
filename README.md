@@ -1,6 +1,6 @@
 # ia-analyses-db
 
-更新日期：2026-05-20-17:53
+更新日期：2026-05-20-18:29
 校準日期：2026-05-20-16:11
 
 註：2026-05-19 起，正式操作入口改為 `make dev-*` / `make prod-*`。本文若出現 `db-*`，除非明確標示為歷史紀錄，否則一律以新命名為準。
@@ -35,6 +35,14 @@
 - `pos_order_type_dim`: 訂單型態映射表。
 - `pos_payment_type_dim`: 付款型態映射表。
 - `pos_order_status_dim`: 訂單狀態語意表，固定 raw status code 與 sales / void / excluded bucket。
+
+## 2026-05-20 18:29 全 repo 更新模式 runtime 對齊結果
+
+- 依 `agent-rule` 第 2.6 條與第 5.6 條再次完成 dev runtime 對齊：`make dev-env`、`make dev-restart RESTORE=1 BACKUP_FILE=2026-05-20-17-51.dump`、`make dev-smoke-analytics` 均通過；restore validation = `ia_analyses|7`
+- restore 前自動建立一般 dev pre-restore backup [backup/dev/2026-05-20-18-28.dump](backup/dev/2026-05-20-18-28.dump)；目前最新一般 dev restore backup inventory 為 [backup/dev/2026-05-20-18-28.dump](backup/dev/2026-05-20-18-28.dump)、[backup/dev/2026-05-20-17-51.dump](backup/dev/2026-05-20-17-51.dump)、[backup/dev/2026-05-20-17-37.dump](backup/dev/2026-05-20-17-37.dump)
+- schema drift 檢查通過：`public tables = 7`、`missing_required_tables = 0`、`missing_required_columns = 0`；核心表 row count 為 `ia_users = 1`、`pos_order_type_dim = 10`、`pos_payment_type_dim = 8`、`pos_order_status_dim = 4`、`pos_product_dim = 581`、`pos_branch_dim = 278`、`pos_sales_hourly_fact = 3698110`
+- patch effect / schema contract 驗證通過：`pos_order_status_dim.updated_at = TIMESTAMPTZ`、`pos_branch_dim.group_code = text`，且 `pos_sales_hourly_fact.business_date` comment 仍固定為 `sale_period` 語意
+- `make dev-smoke-analytics` 已通過；關鍵字排除後 leaderboard row count = `580`，top 5 商品查詢可正常回傳
 
 ## 2026-05-20 17:53 全 repo 更新模式 runtime 對齊結果
 
