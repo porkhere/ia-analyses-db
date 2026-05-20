@@ -1,6 +1,7 @@
 # ia-analyses-db minimal analytics baseline plan
 
-最後檢視：2026-05-20
+更新日期：2026-05-20-16:11
+校準日期：2026-05-20-16:11
 
 ## 目標
 
