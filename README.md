@@ -1,7 +1,7 @@
 # ia-analyses-db
 
-更新日期：2026-05-20-22:54
-校準日期：2026-05-20-22:54
+更新日期：2026-05-20-23:29
+校準日期：2026-05-20-23:29
 
 註：2026-05-19 起，正式操作入口改為 `make dev-*` / `make prod-*`。本文若出現 `db-*`，除非明確標示為歷史紀錄，否則一律以新命名為準。
 
@@ -38,12 +38,22 @@
 - `pos_payment_type_dim`: 付款型態映射表。
 - `pos_order_status_dim`: 訂單狀態語意表，固定 raw status code 與 sales / void / excluded bucket。
 
+## 2026-05-20 23:26 全 repo 更新模式 runtime 對齊結果
+
+- 依 `agent-rule` 第 2.6 條、本輪再次完成最低啟動檢查：`ia-analyses-db`、`ia-analyses-go`、`ia-analyses-guide` 在 `git fetch --all --prune` 後皆維持 clean，`HEAD...@{upstream}` 皆為 `0 0`
+- 本輪再次確認只有 `ia-analyses-db` 屬於 runtime repo；`ia-analyses-go`、`ia-analyses-guide` 的 README / Makefile 仍明確標示為文件骨架，免重啟
+- DB dev runtime 對齊已通過：`make dev-env`、`make dev-restart RESTORE=1 BACKUP_FILE=2026-05-20-22-06.dump`、schema drift 檢查、`make dev-smoke-analytics`、`make dev-size`、`make dev-backup` 均通過；restore validation = `ia_analyses|7`
+- schema drift 檢查結果為 `public tables = 7`、`missing_required_tables = 0`、`missing_required_columns = 0`；核心表 row count 為 `ia_users = 1`、`pos_order_type_dim = 10`、`pos_payment_type_dim = 8`、`pos_order_status_dim = 4`、`pos_product_dim = 581`、`pos_branch_dim = 278`、`pos_sales_hourly_fact = 3698110`
+- `make dev-smoke-analytics` 通過後，關鍵字排除後 leaderboard row count = `580`；`make dev-size` 顯示目前 dev database size 約 `962.80 MB`
+- restore 流程新增一般 dev pre-restore backup `2026-05-20-23-24.dump`，對齊完成後新增一般 dev backup `2026-05-20-23-26.dump`；依輪替策略，最舊的 `2026-05-20-17-37.dump` 與 `2026-05-20-17-51.dump` 對應 manifest 已移除，當前保留的 5 份 manifest 為 [backup/manifest/dev/2026-05-20-18-28.md](backup/manifest/dev/2026-05-20-18-28.md)、[backup/manifest/dev/2026-05-20-22-03.md](backup/manifest/dev/2026-05-20-22-03.md)、[backup/manifest/dev/2026-05-20-22-06.md](backup/manifest/dev/2026-05-20-22-06.md)、[backup/manifest/dev/2026-05-20-23-24.md](backup/manifest/dev/2026-05-20-23-24.md)、[backup/manifest/dev/2026-05-20-23-26.md](backup/manifest/dev/2026-05-20-23-26.md)
+- 為了讓附則第 1 條的 manifest 狀態能完整記錄 restore 後的 migrate / schema drift / restart / validation 結果，本輪新增 `make dev-mark-runtime-aligned BACKUP_FILE=...`；`2026-05-20-22-06.dump` 的 manifest 已用這個入口補齊為全 true
+
 ## 2026-05-20 22:54 附則第 1 條落地結果
 
 - 已啟用「DB backup 實體檔不入 git」：一般 backup 與未來 baseline dump 都留在本機 `backup/`，不再提交到 git
 - `.gitignore` 已改為忽略 `backup/**/*.dump`；backup 追蹤證據改由 `backup/manifest/` 提交
-- 本輪已為現存 5 份 dev dump 建立對應 manifest： [backup/manifest/dev/2026-05-20-17-37.md](backup/manifest/dev/2026-05-20-17-37.md)、[backup/manifest/dev/2026-05-20-17-51.md](backup/manifest/dev/2026-05-20-17-51.md)、[backup/manifest/dev/2026-05-20-18-28.md](backup/manifest/dev/2026-05-20-18-28.md)、[backup/manifest/dev/2026-05-20-22-03.md](backup/manifest/dev/2026-05-20-22-03.md)、[backup/manifest/dev/2026-05-20-22-06.md](backup/manifest/dev/2026-05-20-22-06.md)
-- `make dev-backup` 現在會在建立 local dump 後同步寫入 manifest；`make dev-restore` 在 restore 完成後也會更新對應 manifest 的 restore 狀態
+- 目前現存 5 份 dev dump manifest 為 [backup/manifest/dev/2026-05-20-18-28.md](backup/manifest/dev/2026-05-20-18-28.md)、[backup/manifest/dev/2026-05-20-22-03.md](backup/manifest/dev/2026-05-20-22-03.md)、[backup/manifest/dev/2026-05-20-22-06.md](backup/manifest/dev/2026-05-20-22-06.md)、[backup/manifest/dev/2026-05-20-23-24.md](backup/manifest/dev/2026-05-20-23-24.md)、[backup/manifest/dev/2026-05-20-23-26.md](backup/manifest/dev/2026-05-20-23-26.md)
+- `make dev-backup` 會在建立 local dump 後同步寫入 manifest；`make dev-restore` 會更新對應 manifest 的 restore 狀態；若整輪 DB runtime 對齊完成，則用 `make dev-mark-runtime-aligned BACKUP_FILE=...` 補齊 manifest 的 migrate / schema drift / restart / validation 狀態
 
 ## 2026-05-20 22:09 全 repo 更新模式 runtime 對齊結果
 
