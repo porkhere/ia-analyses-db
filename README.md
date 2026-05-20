@@ -1,6 +1,6 @@
 # ia-analyses-db
 
-更新日期：2026-05-20-17:40
+更新日期：2026-05-20-17:53
 校準日期：2026-05-20-16:11
 
 註：2026-05-19 起，正式操作入口改為 `make dev-*` / `make prod-*`。本文若出現 `db-*`，除非明確標示為歷史紀錄，否則一律以新命名為準。
@@ -36,12 +36,12 @@
 - `pos_payment_type_dim`: 付款型態映射表。
 - `pos_order_status_dim`: 訂單狀態語意表，固定 raw status code 與 sales / void / excluded bucket。
 
-## 2026-05-20 全 repo 更新模式 runtime 對齊結果
+## 2026-05-20 17:53 全 repo 更新模式 runtime 對齊結果
 
-- 依 `agent-rule` 第 2.6 條與第 5.6 條完成 dev runtime 對齊：`make dev-env`、`make dev-up`、`make dev-backup`、`make dev-restore BACKUP_FILE=2026-05-20-17-37-align.dump`、`make dev-migrate`、`make dev-smoke-analytics` 均通過
+- 依 `agent-rule` 第 2.6 條與第 5.6 條再次完成 dev runtime 對齊：`make dev-env`、`make dev-restart RESTORE=1 BACKUP_FILE=2026-05-20-17-37.dump`、`make dev-smoke-analytics` 均通過；restore validation = `ia_analyses|7`
 - 當前 dev PostgreSQL 核心表 row count 為：`pos_product_dim = 581`、`pos_branch_dim = 278`、`pos_sales_hourly_fact = 3698110`
-- 本輪已建立一般 dev restore backup [backup/dev/2026-05-20-17-37.dump](backup/dev/2026-05-20-17-37.dump)；它可供 `make dev-restore` 使用，但不取代 `backup/dev/baseline/` 的 tracked baseline dump 治理
-- `make dev-smoke-analytics` 已通過；關鍵字排除後 leaderboard row count = `580`
+- 目前最新一般 dev restore backup 為 [backup/dev/2026-05-20-17-51.dump](backup/dev/2026-05-20-17-51.dump)；上一份 [backup/dev/2026-05-20-17-37.dump](backup/dev/2026-05-20-17-37.dump) 仍保留，可供 `make dev-restore` 使用，但兩者都不取代 `backup/dev/baseline/` 的 tracked baseline dump 治理
+- `make dev-smoke-analytics` 已通過；關鍵字排除後 leaderboard row count = `580`，top 5 商品查詢可正常回傳
 
 ## 2026-05-20 16:11 重新開始基準（歷史）
 
