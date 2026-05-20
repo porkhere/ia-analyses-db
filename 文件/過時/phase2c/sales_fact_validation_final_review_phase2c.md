@@ -20,11 +20,11 @@
 
 目前已存在的 validation SQL draft 如下：
 
-- [../db/validation_draft/sales_fact_source_metrics.sql](../db/validation_draft/sales_fact_source_metrics.sql)
-- [../db/validation_draft/sales_fact_target_metrics.sql](../db/validation_draft/sales_fact_target_metrics.sql)
-- [../db/validation_draft/sales_fact_compare_metrics.sql](../db/validation_draft/sales_fact_compare_metrics.sql)
-- [../db/validation_draft/sales_fact_dimension_gate_checks.sql](../db/validation_draft/sales_fact_dimension_gate_checks.sql)
-- [../db/validation_draft/sales_fact_negative_schema_checks.sql](../db/validation_draft/sales_fact_negative_schema_checks.sql)
+- [../../../db/validation_draft/sales_fact_source_metrics.sql](../../../db/validation_draft/sales_fact_source_metrics.sql)
+- [../../../db/validation_draft/sales_fact_target_metrics.sql](../../../db/validation_draft/sales_fact_target_metrics.sql)
+- [../../../db/validation_draft/sales_fact_compare_metrics.sql](../../../db/validation_draft/sales_fact_compare_metrics.sql)
+- [../../../db/validation_draft/sales_fact_dimension_gate_checks.sql](../../../db/validation_draft/sales_fact_dimension_gate_checks.sql)
+- [../../../db/validation_draft/sales_fact_negative_schema_checks.sql](../../../db/validation_draft/sales_fact_negative_schema_checks.sql)
 
 ## 2. 每一份 SQL draft 的責任邊界
 

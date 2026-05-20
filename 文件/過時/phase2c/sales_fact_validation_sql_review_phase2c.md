@@ -6,9 +6,9 @@
 
 對應檔案：
 
-- [../db/validation_draft/sales_fact_source_metrics.sql](../db/validation_draft/sales_fact_source_metrics.sql)
-- [../db/validation_draft/sales_fact_target_metrics.sql](../db/validation_draft/sales_fact_target_metrics.sql)
-- [../db/validation_draft/sales_fact_compare_metrics.sql](../db/validation_draft/sales_fact_compare_metrics.sql)
+- [../../../db/validation_draft/sales_fact_source_metrics.sql](../../../db/validation_draft/sales_fact_source_metrics.sql)
+- [../../../db/validation_draft/sales_fact_target_metrics.sql](../../../db/validation_draft/sales_fact_target_metrics.sql)
+- [../../../db/validation_draft/sales_fact_compare_metrics.sql](../../../db/validation_draft/sales_fact_compare_metrics.sql)
 
 補充：
 
@@ -21,9 +21,9 @@
 
 - 不執行 Athena
 - 不執行 PostgreSQL
-- 不修改 [../db/init/001_schema.sql](../db/init/001_schema.sql)
+- 不修改 [../../../db/init/001_schema.sql](../../../db/init/001_schema.sql)
 - 不新增 migration
-- 不修改 [../db/patches/003_phase2c_schema_contract.sql](../db/patches/003_phase2c_schema_contract.sql)
+- 不修改 [../../../db/patches/003_phase2c_schema_contract.sql](../../../db/patches/003_phase2c_schema_contract.sql)
 - 不修改 Go
 - 不改 `sync-athena`
 - 不做資料回填
@@ -31,7 +31,7 @@
 
 ## Source Metrics Draft 審查
 
-[sales_fact_source_metrics.sql](../db/validation_draft/sales_fact_source_metrics.sql) 的定位正確：
+[sales_fact_source_metrics.sql](../../../db/validation_draft/sales_fact_source_metrics.sql) 的定位正確：
 
 - 明確標示它是 Athena / source candidate 草案，不保證可直接在 PostgreSQL 執行。
 - 使用 placeholder：`:owner_user_id`、`:start_date`、`:end_date`。
@@ -60,7 +60,7 @@
 
 ## Target Metrics Draft 審查
 
-[sales_fact_target_metrics.sql](../db/validation_draft/sales_fact_target_metrics.sql) 的定位正確：
+[sales_fact_target_metrics.sql](../../../db/validation_draft/sales_fact_target_metrics.sql) 的定位正確：
 
 - 明確以 PostgreSQL `public.pos_sales_hourly_fact` 為查詢對象。
 - 使用 placeholder：`:owner_user_id`、`:start_date`、`:end_date`。
@@ -84,7 +84,7 @@
 
 ## Compare Metrics Draft 審查
 
-[sales_fact_compare_metrics.sql](../db/validation_draft/sales_fact_compare_metrics.sql) 的定位正確：
+[sales_fact_compare_metrics.sql](../../../db/validation_draft/sales_fact_compare_metrics.sql) 的定位正確：
 
 - 不直接跨 Athena / PostgreSQL 執行。
 - 以 `source_metrics_input` 與 `target_metrics_input` 兩個 CTE 模擬輸入。
@@ -112,7 +112,7 @@
 
 ## README Markdown 修正
 
-本輪另外檢查了 [README.md](../README.md) 的 markdown code fence。
+本輪另外檢查了 [README.md](../../../README.md) 的 markdown code fence。
 
 結果：
 

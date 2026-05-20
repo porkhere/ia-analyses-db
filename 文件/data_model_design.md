@@ -4,10 +4,10 @@
 
 本文件依據以下現有內容整理：
 
-- `文件/quicksight_analysis_inventory.md`
-- `文件/quicksight_metric_mapping.md`
-- `文件/fact_gap_analysis.md`
-- `文件/validation_plan.md`
+- `文件/過時/quicksight/quicksight_analysis_inventory.md`
+- `文件/過時/quicksight/quicksight_metric_mapping.md`
+- `文件/過時/phase2c/fact_gap_analysis.md`
+- `文件/過時/phase2c/validation_plan.md`
 - `db/init/001_schema.sql`
 - `internal/athena/sql.go`
 - `README.md`

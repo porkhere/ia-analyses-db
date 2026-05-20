@@ -6,6 +6,12 @@
 
 這個 repo 是 IA 分析資料庫的第一階段骨架，目標是先把 PostgreSQL、資料表結構、備份還原流程，以及 `sync-athena` 的 CLI 入口建立起來，讓後續 Athena 同步邏輯可以在同一個倉庫內逐步落地。
 
+## 文件入口
+
+- 主要文件索引見 [文件/README.md](文件/README.md)。
+- 長期主線架構與文件分層規則見 [文件/架構指南.md](文件/架構指南.md)。
+- 新工作預設先從這兩份文件進入；`文件/過時/` 內的歷史 review / validation / migration / QuickSight 盤點文件不應直接當成最新指令來源。
+
 ## 為什麼不是 1:1 複製 Athena 原始表
 
 目前已確認 `50lan_new` 的原始表量大、欄位髒值多，而且付款與稅額邏輯需要先聚合、清洗、再映射。直接把八張 Athena 原表完整複製到 PostgreSQL，會同時帶來以下問題：
@@ -50,7 +56,7 @@
 
 ## 2026-05-20 analytics productization gap 結論
 
-- 目前最接近產品化的基礎是：`pos_sales_hourly_fact`、六張核心維度 / 映射表、`sales-pipe-*` controller、`sync-sales-dims*` 與 `sync-athena-*` pipeline，以及 `文件/quicksight_metric_mapping.md`
+- 目前最接近產品化的基礎是：`pos_sales_hourly_fact`、六張核心維度 / 映射表、`sales-pipe-*` controller、`sync-sales-dims*` 與 `sync-athena-*` pipeline，以及 `文件/過時/quicksight/quicksight_metric_mapping.md`
 - 目前最可直接產品化的統計是商品排行、門店排行、時段銷售、canonical payment mix、order type mix、稅/折扣/附加費摘要
 - 目前最大的 productization gap 不是再擴 schema，而是：`可重現 baseline data`、`商品語意分類`、`API layer`、`aggregation / materialized view layer`
 - 產品 roadmap 建議先從 `baseline restore + semantics + read-only analytics API` 開始，不直接跳大型 forecast 或 ML framework
@@ -135,9 +141,9 @@
 
 ### Phase 2C-2 schema migration plan
 
-- Phase 2C-2 的輸出是 [文件/schema_migration_plan_phase2c.md](文件/schema_migration_plan_phase2c.md)，不是 migration 實作。
+- Phase 2C-2 的輸出是 [文件/過時/phase2c/schema_migration_plan_phase2c.md](文件/過時/phase2c/schema_migration_plan_phase2c.md)，不是 migration 實作。
 - 這一輪只整理 schema 變更計畫與 migration 順序，不修改 `db/init/001_schema.sql`、不建立 migration、也不寫 PostgreSQL。
-- 目前下一步是審查 [文件/schema_migration_plan_phase2c.md](文件/schema_migration_plan_phase2c.md)，確認 additive schema、回填策略、deprecated 欄位策略與 validation 影響。
+- 目前下一步是審查 [文件/過時/phase2c/schema_migration_plan_phase2c.md](文件/過時/phase2c/schema_migration_plan_phase2c.md)，確認 additive schema、回填策略、deprecated 欄位策略與 validation 影響。
 
 ### Phase 2C-3-pre formal migration
 
@@ -155,14 +161,14 @@
 
 ### Phase 2C-4 sales fact validation contract
 
-- Phase 2C-4 的輸出是 [文件/sales_fact_validation_contract_phase2c.md](文件/sales_fact_validation_contract_phase2c.md)。
+- Phase 2C-4 的輸出是 [文件/過時/phase2c/sales_fact_validation_contract_phase2c.md](文件/過時/phase2c/sales_fact_validation_contract_phase2c.md)。
 - 這一輪只定義 sales fact 寫入前的 validation contract 與 SQL 草案，不實作 `sync-athena` 寫入，不跑 Athena，不寫 PostgreSQL。
 - contract 內容固定了 source metrics、target metrics、reconciliation 欄位、`business_date = sale_period` 驗證、`status = 1` latest-row source path 驗證、dim miss 檢查、negative checks、day-level replace 流程與 tolerance 原則。
 - `item_count` 在這份 contract 中被定義為 validation-only control metric，不新增進 `pos_sales_hourly_fact` schema。
 - Phase 2C-4.5 已新增 metrics reconciliation SQL 草案：`sales_fact_source_metrics.sql`、`sales_fact_target_metrics.sql`、`sales_fact_compare_metrics.sql`。
 - Phase 2C-4.6 已補齊 validation gate SQL 草案：`sales_fact_dimension_gate_checks.sql`、`sales_fact_negative_schema_checks.sql`。
-- Phase 2C-4.7 final review 已完成，文件為 [文件/sales_fact_validation_final_review_phase2c.md](文件/sales_fact_validation_final_review_phase2c.md)；它把 contract、metrics review 與 gate review 收斂成單一最終結論。
-- Phase 2C-5 的前置條件已固定為：contract 定稿、[文件/sales_fact_validation_sql_review_phase2c.md](文件/sales_fact_validation_sql_review_phase2c.md) 通過、[文件/sales_fact_validation_gate_review_phase2c.md](文件/sales_fact_validation_gate_review_phase2c.md) 通過，以及 [文件/sales_fact_validation_final_review_phase2c.md](文件/sales_fact_validation_final_review_phase2c.md) 完成。
+- Phase 2C-4.7 final review 已完成，文件為 [文件/過時/phase2c/sales_fact_validation_final_review_phase2c.md](文件/過時/phase2c/sales_fact_validation_final_review_phase2c.md)；它把 contract、metrics review 與 gate review 收斂成單一最終結論。
+- Phase 2C-5 的前置條件已固定為：contract 定稿、[文件/過時/phase2c/sales_fact_validation_sql_review_phase2c.md](文件/過時/phase2c/sales_fact_validation_sql_review_phase2c.md) 通過、[文件/過時/phase2c/sales_fact_validation_gate_review_phase2c.md](文件/過時/phase2c/sales_fact_validation_gate_review_phase2c.md) 通過，以及 [文件/過時/phase2c/sales_fact_validation_final_review_phase2c.md](文件/過時/phase2c/sales_fact_validation_final_review_phase2c.md) 完成。
 - final review 的結論已固定為：Phase 2C-5 可以開始，但僅限 sales fact PG write path skeleton + validation gate 整合。
 - Phase 2C-5 仍然禁止：order fact、payment fact、condiment fact、branch opening fact，以及 raw payment、void / refund / order-level metrics、`item_count` 寫進 persisted sales fact；也不得繞過 validation gate。
 - Phase 2C-5 必須遵守：day-level replace、transaction boundary、validation first、pre-insert compare、dimension gate、negative schema gate、post-insert compare，且 hard gate fail 必須 stop / rollback。
@@ -189,7 +195,7 @@
 - 2C-5.5 的 2025-01-01 ~ 2025-01-02 驗證結果：2025-01-01 寫入 `103545` 筆、2025-01-02 寫入 `98167` 筆；兩天 post-insert target metrics delta 都為 `0`，兩天 `product_dim_miss_count = 0`、`branch_dim_miss_count = 0`、`forbidden_column_count = 0`。
 - 2C-5.5 仍採逐日 day-level transaction，不使用跨兩天的大 transaction；每一天都固定走 pre-insert validation、delete、insert、post-insert compare、commit/rollback。若前一天失敗，不得繼續後一天。
 - `make sync-athena-validate` 與 `make sync-athena-write-plan` 在 2C-5.5 重新驗證後仍保持 read-only，`actual_write_enabled = false`，不會 delete / insert / commit。
-- 本輪已進入 Phase 2C-5.R：small-window regression validation，先整理 [文件/sales_fact_correctness_basis_phase2c.md](文件/sales_fact_correctness_basis_phase2c.md) 與 [文件/sales_fact_regression_windows_phase2c.md](文件/sales_fact_regression_windows_phase2c.md)，再用多個小窗口重跑 validate-only / write-plan，並只在既有允許範圍內重跑 actual write。
+- 本輪已進入 Phase 2C-5.R：small-window regression validation，先整理 [文件/過時/phase2c/sales_fact_correctness_basis_phase2c.md](文件/過時/phase2c/sales_fact_correctness_basis_phase2c.md) 與 [文件/過時/phase2c/sales_fact_regression_windows_phase2c.md](文件/過時/phase2c/sales_fact_regression_windows_phase2c.md)，再用多個小窗口重跑 validate-only / write-plan，並只在既有允許範圍內重跑 actual write。
 - Phase 2C-5.R 的 correctness basis 已固定為：Athena raw POS tables 是 source of record，但正確性不是直接相信 raw rows，而是依據 status-aware semantic contract、source -> candidate compare、dimension gate、negative schema gate 與 candidate -> post-insert target compare；QuickSight 是 business benchmark，不是所有 row-level fact 的唯一 truth。
 - 5.R read-only regression 結果：2025-01-01、2025-01-02、2025-01-01 ~ 2025-01-02 的 validate-only / write-plan 都通過，`actual_write_enabled = false`，source / candidate metrics delta = `0`。
 - 5.R read-only regression 也確認：2025-01-07、2025-01-15、2025-01-31、2025-01-31 ~ 2025-02-01 都不是 source / candidate mismatch，也不是 forbidden schema 問題；它們是在 pre-insert hard gate 被 `product_dim_miss_count` / `branch_dim_miss_count` 擋下，先分類為 `dimension_bootstrap_issue`，不視為 `actual_code_bug`。
@@ -414,9 +420,9 @@ make sync-sales-dims OWNER_USER_KEY=demo-owner OWNER_USER_ID=1 START_DATE=2025-0
 ## 下一階段預計補上
 
 - Phase 2C-1：凍結日期語意、產品部門維度與 raw/canonical 邊界
-- Phase 2C-2：審查 [文件/schema_migration_plan_phase2c.md](文件/schema_migration_plan_phase2c.md)，確認 additive schema migration 順序
+- Phase 2C-2：審查 [文件/過時/phase2c/schema_migration_plan_phase2c.md](文件/過時/phase2c/schema_migration_plan_phase2c.md)，確認 additive schema migration 順序
 - Phase 2C-3：本機開發 DB schema patch 驗證通過
-- Phase 2C-4：審查 [文件/sales_fact_validation_contract_phase2c.md](文件/sales_fact_validation_contract_phase2c.md)
+- Phase 2C-4：審查 [文件/過時/phase2c/sales_fact_validation_contract_phase2c.md](文件/過時/phase2c/sales_fact_validation_contract_phase2c.md)
 - Phase 2C-4.5：metrics reconciliation SQL drafts review 已完成
 - Phase 2C-4.6：dimension / negative schema gate SQL drafts review 已完成
 - Phase 2C-4.7：final review 已完成，確認可進入受限的 Phase 2C-5

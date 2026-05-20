@@ -231,7 +231,7 @@ WHERE d.id IS NULL;
 
 Phase 2C-4.6 對應 SQL 草案：
 
-- [../db/validation_draft/sales_fact_dimension_gate_checks.sql](../db/validation_draft/sales_fact_dimension_gate_checks.sql)
+- [../../../db/validation_draft/sales_fact_dimension_gate_checks.sql](../../../db/validation_draft/sales_fact_dimension_gate_checks.sql)
 - hard gate 欄位固定為：
 - `product_dim_miss_count`
 - `branch_dim_miss_count`
@@ -296,7 +296,7 @@ WHERE table_schema = 'public'
 
 Phase 2C-4.6 對應 SQL 草案：
 
-- [../db/validation_draft/sales_fact_negative_schema_checks.sql](../db/validation_draft/sales_fact_negative_schema_checks.sql)
+- [../../../db/validation_draft/sales_fact_negative_schema_checks.sql](../../../db/validation_draft/sales_fact_negative_schema_checks.sql)
 - hard gate 結果固定為：
 - `forbidden_column_count`
 - `forbidden_column_names`

@@ -6,14 +6,14 @@
 
 本文依據以下既有文件與 schema：
 
-- [README.md](../README.md)
-- [架構指南.md](./架構指南.md)
-- [更新紀錄.md](./更新紀錄.md)
-- [data_model_design.md](./data_model_design.md)
+- [README.md](../../../README.md)
+- [架構指南.md](../../架構指南.md)
+- [更新紀錄.md](../../更新紀錄.md)
+- [data_model_design.md](../../data_model_design.md)
 - [fact_implementation_sequence.md](./fact_implementation_sequence.md)
 - [fact_gap_analysis.md](./fact_gap_analysis.md)
 - [validation_plan.md](./validation_plan.md)
-- [001_schema.sql](../db/init/001_schema.sql)
+- [001_schema.sql](../../../db/init/001_schema.sql)
 
 ## 1. 目標
 
@@ -37,14 +37,14 @@ Phase 2C-2 本輪明確不做以下事情：
 - 不 drop 現有欄位，除非明確列入未來版本。
 - 不把 raw payment `name` / `memo1` 塞進 sales fact。
 - 不把 `cate_name`、branch `options` 塞進 sales fact。
-- 不修改 [001_schema.sql](../db/init/001_schema.sql)。
+- 不修改 [001_schema.sql](../../../db/init/001_schema.sql)。
 - 不建立 migration 檔。
 
 ## 3. 現有 schema 審查
 
 ### 3.1 目前 baseline schema 實際有哪些表
 
-依 [001_schema.sql](../db/init/001_schema.sql)，目前 baseline schema 共有 6 張表：
+依 [001_schema.sql](../../../db/init/001_schema.sql)，目前 baseline schema 共有 6 張表：
 
 | 表名 | 用途 | Phase 2C-2 判定 |
 | --- | --- | --- |
@@ -167,7 +167,7 @@ Phase 2C-2 本輪明確不做以下事情：
 
 #### deprecated / phase-out
 
-以 [001_schema.sql](../db/init/001_schema.sql) 為準，baseline schema 目前沒有下列欄位：
+以 [001_schema.sql](../../../db/init/001_schema.sql) 為準，baseline schema 目前沒有下列欄位：
 
 - `order_count`
 - `void_milli`
@@ -518,9 +518,9 @@ seed 草案：
 Phase 2C-2 完成前，建議至少滿足以下條件：
 
 - [schema_migration_plan_phase2c.md](./schema_migration_plan_phase2c.md) 已完成。
-- [README.md](../README.md)、[架構指南.md](./架構指南.md)、[更新紀錄.md](./更新紀錄.md) 已引用 Phase 2C-2 migration plan。
+- [README.md](../../../README.md)、[架構指南.md](../../架構指南.md)、[更新紀錄.md](../../更新紀錄.md) 已引用 Phase 2C-2 migration plan。
 - [fact_implementation_sequence.md](./fact_implementation_sequence.md) 已改為「先完成 plan，再建立 migration」。
-- 沒有修改 [001_schema.sql](../db/init/001_schema.sql)。
+- 沒有修改 [001_schema.sql](../../../db/init/001_schema.sql)。
 - 沒有新增 migration。
 - 沒有改 `sync-athena`。
 - 沒有跑 Athena。

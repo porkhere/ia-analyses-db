@@ -6,8 +6,8 @@
 
 對應檔案：
 
-- [../db/validation_draft/sales_fact_dimension_gate_checks.sql](../db/validation_draft/sales_fact_dimension_gate_checks.sql)
-- [../db/validation_draft/sales_fact_negative_schema_checks.sql](../db/validation_draft/sales_fact_negative_schema_checks.sql)
+- [../../../db/validation_draft/sales_fact_dimension_gate_checks.sql](../../../db/validation_draft/sales_fact_dimension_gate_checks.sql)
+- [../../../db/validation_draft/sales_fact_negative_schema_checks.sql](../../../db/validation_draft/sales_fact_negative_schema_checks.sql)
 - [sales_fact_validation_sql_review_phase2c.md](sales_fact_validation_sql_review_phase2c.md)
 
 ## 範圍確認
@@ -16,9 +16,9 @@
 
 - 不執行 Athena
 - 不執行 PostgreSQL
-- 不修改 [../db/init/001_schema.sql](../db/init/001_schema.sql)
+- 不修改 [../../../db/init/001_schema.sql](../../../db/init/001_schema.sql)
 - 不新增 migration
-- 不修改 [../db/patches/003_phase2c_schema_contract.sql](../db/patches/003_phase2c_schema_contract.sql)
+- 不修改 [../../../db/patches/003_phase2c_schema_contract.sql](../../../db/patches/003_phase2c_schema_contract.sql)
 - 不修改 Go
 - 不改 `sync-athena`
 - 不做資料回填
@@ -32,7 +32,7 @@
 
 ## Dimension Gate Draft 審查
 
-[sales_fact_dimension_gate_checks.sql](../db/validation_draft/sales_fact_dimension_gate_checks.sql) 已補齊 contract 要求的 hard gate 欄位：
+[sales_fact_dimension_gate_checks.sql](../../../db/validation_draft/sales_fact_dimension_gate_checks.sql) 已補齊 contract 要求的 hard gate 欄位：
 
 - `product_dim_miss_count`
 - `branch_dim_miss_count`
@@ -50,7 +50,7 @@
 
 ## Negative Schema Gate Draft 審查
 
-[sales_fact_negative_schema_checks.sql](../db/validation_draft/sales_fact_negative_schema_checks.sql) 已補齊 PostgreSQL information_schema 檢查：
+[sales_fact_negative_schema_checks.sql](../../../db/validation_draft/sales_fact_negative_schema_checks.sql) 已補齊 PostgreSQL information_schema 檢查：
 
 - `raw_payment_name`
 - `raw_payment_memo1`
