@@ -21,11 +21,11 @@ if [[ -n "$BASELINE_ARG" ]]; then
 elif (( ${#baseline_files[@]} > 0 )); then
   BASELINE_FILE="${baseline_files[0]}"
 else
-  echo "baseline restore failed: no tracked baseline dump found under $BASELINE_DIR" >&2
+  echo "baseline restore failed: no local baseline dump found under $BASELINE_DIR" >&2
   if [[ -f "$MANIFEST_FILE" ]]; then
     echo "baseline manifest: $MANIFEST_FILE" >&2
   fi
-  echo "請先從已驗證的本機 PostgreSQL 或其他已確認來源建立最小 baseline dump；不得用假資料替代。" >&2
+  echo "請先從已驗證的本機 PostgreSQL 或其他已確認來源建立最小 baseline dump 與對應 backup manifest；不得用假資料替代。" >&2
   exit 1
 fi
 

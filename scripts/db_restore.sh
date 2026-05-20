@@ -75,6 +75,13 @@ docker compose --project-directory "$PROJECT_DIR" --env-file "$ENV_FILE" exec -T
 restore_validation="$(docker compose --project-directory "$PROJECT_DIR" --env-file "$ENV_FILE" exec -T postgres \
   psql -U "$PGUSER" -d "$PGDATABASE" -Atc "SELECT current_database() || '|' || COUNT(*) FROM pg_tables WHERE schemaname = 'public';")"
 
+"$PROJECT_DIR/scripts/db_write_backup_manifest.sh" "$BACKUP_FILE" \
+  --restore-completed true \
+  --migrate-completed false \
+  --schema-drift-checked false \
+  --restart-completed false \
+  --validation-completed false
+
 echo "app_env: $APP_ENV"
 echo "restore completed: $BACKUP_FILE"
 echo "restore validation: $restore_validation"

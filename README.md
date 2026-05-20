@@ -1,9 +1,11 @@
 # ia-analyses-db
 
-更新日期：2026-05-20-22:09
-校準日期：2026-05-20-22:09
+更新日期：2026-05-20-22:54
+校準日期：2026-05-20-22:54
 
 註：2026-05-19 起，正式操作入口改為 `make dev-*` / `make prod-*`。本文若出現 `db-*`，除非明確標示為歷史紀錄，否則一律以新命名為準。
+
+註：2026-05-20-22:54 起已啟用 `agent-rule/rule-add.md` 附則第 1 條。自此開始，DB backup 實體檔（包含一般 backup 與 baseline dump）不入 git；repo 只提交 backup manifest、metadata 與文件。本文歷史段落若出現 `tracked baseline dump`、`backup 入 git` 等字樣，均視為附則生效前的舊政策。
 
 這個 repo 是 IA 分析資料庫的第一階段骨架，目標是先把 PostgreSQL、資料表結構、備份還原流程，以及 `sync-athena` 的 CLI 入口建立起來，讓後續 Athena 同步邏輯可以在同一個倉庫內逐步落地。
 
@@ -36,13 +38,20 @@
 - `pos_payment_type_dim`: 付款型態映射表。
 - `pos_order_status_dim`: 訂單狀態語意表，固定 raw status code 與 sales / void / excluded bucket。
 
+## 2026-05-20 22:54 附則第 1 條落地結果
+
+- 已啟用「DB backup 實體檔不入 git」：一般 backup 與未來 baseline dump 都留在本機 `backup/`，不再提交到 git
+- `.gitignore` 已改為忽略 `backup/**/*.dump`；backup 追蹤證據改由 `backup/manifest/` 提交
+- 本輪已為現存 5 份 dev dump 建立對應 manifest： [backup/manifest/dev/2026-05-20-17-37.md](backup/manifest/dev/2026-05-20-17-37.md)、[backup/manifest/dev/2026-05-20-17-51.md](backup/manifest/dev/2026-05-20-17-51.md)、[backup/manifest/dev/2026-05-20-18-28.md](backup/manifest/dev/2026-05-20-18-28.md)、[backup/manifest/dev/2026-05-20-22-03.md](backup/manifest/dev/2026-05-20-22-03.md)、[backup/manifest/dev/2026-05-20-22-06.md](backup/manifest/dev/2026-05-20-22-06.md)
+- `make dev-backup` 現在會在建立 local dump 後同步寫入 manifest；`make dev-restore` 在 restore 完成後也會更新對應 manifest 的 restore 狀態
+
 ## 2026-05-20 22:09 全 repo 更新模式 runtime 對齊結果
 
 - 依 `agent-rule` 第 2.6 條與第 5.6 條，在 DB repo pull 最新 6 commits 後完成 dev runtime 對齊：`make dev-env`、`make dev-up`、`make dev-restore BACKUP_FILE=2026-05-20-18-28.dump`、`make dev-migrate`、schema drift 檢查、`make dev-restart`、`make dev-smoke-analytics`、`make dev-size`、`make dev-backup` 均通過
 - restore validation = `ia_analyses|7`；schema drift 檢查確認 `public tables = 7`、`missing_required_tables = 0`、`missing_required_columns = 0`，且 `ia_users = 1`
 - 當前核心表 row count 為 `pos_product_dim = 581`、`pos_branch_dim = 278`、`pos_sales_hourly_fact = 3698110`；`make dev-smoke-analytics` 通過後，關鍵字排除後 leaderboard row count = `580`
 - `make dev-size` 顯示目前 dev database size 約 `962.73 MB`
-- 本輪新增一般 dev pre-restore backup [backup/dev/2026-05-20-22-03.dump](backup/dev/2026-05-20-22-03.dump) 與對齊後 backup [backup/dev/2026-05-20-22-06.dump](backup/dev/2026-05-20-22-06.dump)；目前最新一般 dev restore backup inventory 為 [backup/dev/2026-05-20-22-06.dump](backup/dev/2026-05-20-22-06.dump)、[backup/dev/2026-05-20-22-03.dump](backup/dev/2026-05-20-22-03.dump)、[backup/dev/2026-05-20-18-28.dump](backup/dev/2026-05-20-18-28.dump)、[backup/dev/2026-05-20-17-51.dump](backup/dev/2026-05-20-17-51.dump)、[backup/dev/2026-05-20-17-37.dump](backup/dev/2026-05-20-17-37.dump)
+- 本輪新增一般 dev pre-restore backup `2026-05-20-22-03.dump` 與對齊後 backup `2026-05-20-22-06.dump`；依附則第 1 條，實體 dump 留在本機 `backup/dev/`，對應追蹤證據改由 [backup/manifest/dev/2026-05-20-22-03.md](backup/manifest/dev/2026-05-20-22-03.md) 與 [backup/manifest/dev/2026-05-20-22-06.md](backup/manifest/dev/2026-05-20-22-06.md) 提交
 
 ## 2026-05-20 18:29 全 repo 更新模式 runtime 對齊結果
 
@@ -56,7 +65,7 @@
 
 - 依 `agent-rule` 第 2.6 條與第 5.6 條再次完成 dev runtime 對齊：`make dev-env`、`make dev-restart RESTORE=1 BACKUP_FILE=2026-05-20-17-37.dump`、`make dev-smoke-analytics` 均通過；restore validation = `ia_analyses|7`
 - 當前 dev PostgreSQL 核心表 row count 為：`pos_product_dim = 581`、`pos_branch_dim = 278`、`pos_sales_hourly_fact = 3698110`
-- 目前最新一般 dev restore backup 為 [backup/dev/2026-05-20-17-51.dump](backup/dev/2026-05-20-17-51.dump)；上一份 [backup/dev/2026-05-20-17-37.dump](backup/dev/2026-05-20-17-37.dump) 仍保留，可供 `make dev-restore` 使用，但兩者都不取代 `backup/dev/baseline/` 的 tracked baseline dump 治理
+- 目前最新一般 dev restore backup 為 [backup/dev/2026-05-20-17-51.dump](backup/dev/2026-05-20-17-51.dump)；上一份 [backup/dev/2026-05-20-17-37.dump](backup/dev/2026-05-20-17-37.dump) 仍保留，可供 `make dev-restore` 使用，但兩者都不取代 `backup/dev/baseline/` 的 baseline 專用途徑
 - `make dev-smoke-analytics` 已通過；關鍵字排除後 leaderboard row count = `580`，top 5 商品查詢可正常回傳
 
 ## 2026-05-20 16:11 重新開始基準（歷史）
@@ -73,9 +82,9 @@
 - `db/init/001_schema.sql` 與 `make dev-sync-seeds` 只會建立 schema 與 canonical seed，不會產生非空 `pos_product_dim`、`pos_branch_dim`、`pos_sales_hourly_fact`
 - 現有 summary report 與 state 只保存摘要，不是可 restore 的資料快照
 - 建議方案採 `hybrid`：以「tracked minimal backup dump」作為 restore 載體，再配 baseline manifest 與 smoke validation 降低 drift
-- tracked baseline dump 應放在 `backup/dev/baseline/`，避免被一般 `dev-backup` 輪替或 `dev-del-backup ALL=1` 誤刪
+- baseline dump 應放在本機 `backup/dev/baseline/`，避免被一般 `dev-backup` 輪替或 `dev-del-backup ALL=1` 誤刪
 - 本輪已先建立 `backup/dev/baseline/manifest.md`、`make dev-restore-baseline` 與 `make dev-smoke-analytics`
-- 在該次盤點時，由於 repo 內沒有任何可用 dump，且本機 dev DB 查核仍為空資料 baseline，因此沒有提交 baseline dump；`make dev-restore-baseline` 會明確提示缺少 tracked baseline dump，`make dev-smoke-analytics` 會明確回報 `smoke failed`
+- 在該次盤點時，由於 repo 內沒有任何可用 dump，且本機 dev DB 查核仍為空資料 baseline，因此沒有提交 baseline dump；`make dev-restore-baseline` 會明確提示缺少 local baseline dump，`make dev-smoke-analytics` 會明確回報 `smoke failed`
 - 詳細設計見 [文件/minimal_analytics_baseline_plan.md](文件/minimal_analytics_baseline_plan.md)
 
 ## 2026-05-20 analytics productization gap 結論
@@ -243,7 +252,7 @@
 2. 依需要調整 `.env.dev` 或 `.env.prod`，再重新執行對應的 `make dev-env` / `make prod-env`
 3. 啟動 PostgreSQL：`make dev-up`
 4. 套用 schema / patch：`make dev-migrate`
-5. 還原 tracked baseline：`make dev-restore-baseline`
+5. 若本機已有 local baseline dump，再執行：`make dev-restore-baseline`
 6. 執行 analytics smoke：`make dev-smoke-analytics`
 7. 檢查資料庫體積：`make dev-size`
 8. 檢查或建立一般備份：`make dev-backup`
@@ -426,20 +435,21 @@ make sync-sales-dims OWNER_USER_KEY=demo-owner OWNER_USER_ID=1 START_DATE=2025-0
 
 ## 備份與還原
 
-- 備份檔固定放在 `backup/dev/` 或 `backup/prod/`
+- 一般 backup 與 baseline dump 實體檔固定留在本機 `backup/dev/` 或 `backup/prod/`，依附則第 1 條不入 git
+- backup 追蹤證據固定寫入 `backup/manifest/`；一般 dev backup 目前可見 [backup/manifest/dev/2026-05-20-17-37.md](backup/manifest/dev/2026-05-20-17-37.md) 等 manifest
 - 備份檔名格式固定為 `YYYY-MM-DD-HH-MM.dump`，每個環境最多保留 5 份，超過時會自動刪除最舊檔
-- 若要提交可重現的 dev analytics baseline，建議放在 `backup/dev/baseline/` 子目錄，不和一般輪替備份混放
+- 若要建立可重現的 dev analytics baseline，實體 dump 應放在本機 `backup/dev/baseline/` 子目錄，不和一般輪替備份混放；對應 manifest 應提交到 `backup/manifest/dev/baseline/`
 - `make dev-size` / `make prod-size` 會用 PostgreSQL 內建函式計算當前資料庫大小，單位 MB
-- `make dev-backup` / `make prod-backup` 會建立目前環境的 `.dump` 備份
+- `make dev-backup` / `make prod-backup` 會建立目前環境的 local `.dump` 備份，並同步寫入 manifest
 - `make dev-backup-list` / `make prod-backup-list` 會依新到舊列出目前環境可還原備份與大小
 - `make dev-sync-seeds` / `make prod-sync-seeds` 會安全地重跑 `db/init/001_schema.sql`，把最新 seed upsert 到現有 DB，不需要刪 volume 重建
 - `make dev-apply-patches` / `make prod-apply-patches` 會套用 `db/patches/*.sql`，用安全方式更新現有 DB schema
-- `make dev-restore` / `make prod-restore` 會先列出備份、接受數字選擇，輸入 `n` 可退出
-- `make dev-restore-baseline` 只會讀 `backup/dev/baseline/*.dump`；若 repo 內尚無 tracked baseline dump，會明確失敗，不會假裝 restore 成功
+- `make dev-restore` / `make prod-restore` 會先列出本機備份、接受數字選擇，輸入 `n` 可退出；restore 完成後會更新對應 manifest
+- `make dev-restore-baseline` 只會讀本機 `backup/dev/baseline/*.dump`；若目前尚無 local baseline dump，會明確失敗，不會假裝 restore 成功
 - `make dev-smoke-analytics` 會檢查 `pos_product_dim`、`pos_branch_dim`、`pos_sales_hourly_fact` 是否非空，並執行帶有排除關鍵字的商品排行榜 smoke query；資料不足時必須 `smoke failed`
 - restore 屬高風險操作，執行前會先自動做一份當前環境 backup，完成後再執行基本 PostgreSQL 驗證
 - `make dev-up RESTORE=1` / `make prod-up RESTORE=1` 會在容器啟動後進入 restore 流程，然後自動補跑 migrate
-- baseline manifest 固定放在 [backup/dev/baseline/manifest.md](backup/dev/baseline/manifest.md)，目前明確標示 repo 尚無 tracked baseline dump
+- baseline 規劃 manifest 固定放在 [backup/dev/baseline/manifest.md](backup/dev/baseline/manifest.md)；若之後建立 local baseline dump，對應 backup manifest 應寫入 `backup/manifest/dev/baseline/*.md`
 
 ## 下一階段預計補上
 
