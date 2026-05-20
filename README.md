@@ -1,7 +1,7 @@
 # ia-analyses-db
 
-更新日期：2026-05-20-18:29
-校準日期：2026-05-20-16:11
+更新日期：2026-05-20-22:09
+校準日期：2026-05-20-22:09
 
 註：2026-05-19 起，正式操作入口改為 `make dev-*` / `make prod-*`。本文若出現 `db-*`，除非明確標示為歷史紀錄，否則一律以新命名為準。
 
@@ -35,6 +35,14 @@
 - `pos_order_type_dim`: 訂單型態映射表。
 - `pos_payment_type_dim`: 付款型態映射表。
 - `pos_order_status_dim`: 訂單狀態語意表，固定 raw status code 與 sales / void / excluded bucket。
+
+## 2026-05-20 22:09 全 repo 更新模式 runtime 對齊結果
+
+- 依 `agent-rule` 第 2.6 條與第 5.6 條，在 DB repo pull 最新 6 commits 後完成 dev runtime 對齊：`make dev-env`、`make dev-up`、`make dev-restore BACKUP_FILE=2026-05-20-18-28.dump`、`make dev-migrate`、schema drift 檢查、`make dev-restart`、`make dev-smoke-analytics`、`make dev-size`、`make dev-backup` 均通過
+- restore validation = `ia_analyses|7`；schema drift 檢查確認 `public tables = 7`、`missing_required_tables = 0`、`missing_required_columns = 0`，且 `ia_users = 1`
+- 當前核心表 row count 為 `pos_product_dim = 581`、`pos_branch_dim = 278`、`pos_sales_hourly_fact = 3698110`；`make dev-smoke-analytics` 通過後，關鍵字排除後 leaderboard row count = `580`
+- `make dev-size` 顯示目前 dev database size 約 `962.73 MB`
+- 本輪新增一般 dev pre-restore backup [backup/dev/2026-05-20-22-03.dump](backup/dev/2026-05-20-22-03.dump) 與對齊後 backup [backup/dev/2026-05-20-22-06.dump](backup/dev/2026-05-20-22-06.dump)；目前最新一般 dev restore backup inventory 為 [backup/dev/2026-05-20-22-06.dump](backup/dev/2026-05-20-22-06.dump)、[backup/dev/2026-05-20-22-03.dump](backup/dev/2026-05-20-22-03.dump)、[backup/dev/2026-05-20-18-28.dump](backup/dev/2026-05-20-18-28.dump)、[backup/dev/2026-05-20-17-51.dump](backup/dev/2026-05-20-17-51.dump)、[backup/dev/2026-05-20-17-37.dump](backup/dev/2026-05-20-17-37.dump)
 
 ## 2026-05-20 18:29 全 repo 更新模式 runtime 對齊結果
 
