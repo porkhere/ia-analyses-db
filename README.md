@@ -1,7 +1,7 @@
 # ia-analyses-db
 
-更新日期：2026-05-20-23:29
-校準日期：2026-05-20-23:29
+更新日期：2026-05-24-02:36
+校準日期：2026-05-24-02:36
 
 註：2026-05-19 起，正式操作入口改為 `make dev-*` / `make prod-*`。本文若出現 `db-*`，除非明確標示為歷史紀錄，否則一律以新命名為準。
 
@@ -13,6 +13,8 @@
 
 - 主要文件索引見 [文件/README.md](文件/README.md)。
 - 長期主線架構與文件分層規則見 [文件/架構指南.md](文件/架構指南.md)。
+- repo 導航入口見 [guide/index.md](guide/index.md)。
+- workspace 跨 repo 對照見 [../ia-analyses-ws-map/ws-map.md](../ia-analyses-ws-map/ws-map.md)。
 - 新工作預設先從這兩份文件進入；`文件/過時/` 內的歷史 review / validation / migration / QuickSight 盤點文件不應直接當成最新指令來源。
 
 ## 為什麼不是 1:1 複製 Athena 原始表

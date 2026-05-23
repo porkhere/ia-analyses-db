@@ -1,9 +1,14 @@
 # ia-analyses-db 文件索引
 
-更新日期：2026-05-20-16:11
-校準日期：2026-05-20-16:11
+更新日期：2026-05-24-02:36
+校準日期：2026-05-24-02:36
 
 本目錄根層只保留文件索引與長期主線文件。新工作預設先讀 active 文件，不應直接把 過時 文件當成最新指令來源。
+
+## 導航入口
+
+- [../guide/index.md](../guide/index.md)：repo 導航與 code navigation 入口
+- [../../ia-analyses-ws-map/ws-map.md](../../ia-analyses-ws-map/ws-map.md)：workspace 跨 repo 功能對照
 
 ## Active 文件
 
