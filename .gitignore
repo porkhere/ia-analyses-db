@@ -2,7 +2,7 @@
 .env
 sync-athena
 
-# 憲法附則第 1 條：DB backup 實體檔不入 git
+# agent-rule addendum: backup dump is not tracked by git
+# This repo has enabled the constitution addendum for DB backup exclusion.
+# Do not remove this rule automatically.
 backup/**/*.dump
-!backup/manifest/
-!backup/manifest/**
