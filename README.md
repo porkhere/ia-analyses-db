@@ -1,7 +1,7 @@
 # ia-analyses-db
 
-更新日期：2026-05-24-02:36
-校準日期：2026-05-24-02:36
+更新日期：2026-05-24-03:15
+校準日期：2026-05-24-03:15
 
 註：2026-05-19 起，正式操作入口改為 `make dev-*` / `make prod-*`。本文若出現 `db-*`，除非明確標示為歷史紀錄，否則一律以新命名為準。
 
@@ -55,7 +55,7 @@
 - 已啟用「DB backup 實體檔不入 git」：一般 backup 與未來 baseline dump 都留在本機 `backup/`，不再提交到 git
 - `.gitignore` 已改為忽略 `backup/**/*.dump`；backup 追蹤證據改由 `backup/manifest/` 提交
 - 目前現存 5 份 dev dump manifest 為 [backup/manifest/dev/2026-05-20-18-28.md](backup/manifest/dev/2026-05-20-18-28.md)、[backup/manifest/dev/2026-05-20-22-03.md](backup/manifest/dev/2026-05-20-22-03.md)、[backup/manifest/dev/2026-05-20-22-06.md](backup/manifest/dev/2026-05-20-22-06.md)、[backup/manifest/dev/2026-05-20-23-24.md](backup/manifest/dev/2026-05-20-23-24.md)、[backup/manifest/dev/2026-05-20-23-26.md](backup/manifest/dev/2026-05-20-23-26.md)
-- `make dev-backup` 會在建立 local dump 後同步寫入 manifest；`make dev-restore` 會更新對應 manifest 的 restore 狀態；若整輪 DB runtime 對齊完成，則用 `make dev-mark-runtime-aligned BACKUP_FILE=...` 補齊 manifest 的 migrate / schema drift / restart / validation 狀態
+- `make dev-backup` 會在建立 local dump 後同步寫入 manifest；`make dev-restore` 會更新對應 manifest 的 restore 狀態；manifest 現固定包含 `storage_type`、`local_path` 與 `availability_scope`；若整輪 DB runtime 對齊完成，則用 `make dev-mark-runtime-aligned BACKUP_FILE=...` 補齊 manifest 的 migrate / schema drift / restart / validation 狀態
 
 ## 2026-05-20 22:09 全 repo 更新模式 runtime 對齊結果
 
@@ -95,7 +95,7 @@
 - 現有 summary report 與 state 只保存摘要，不是可 restore 的資料快照
 - 建議方案採 `hybrid`：以「tracked minimal backup dump」作為 restore 載體，再配 baseline manifest 與 smoke validation 降低 drift
 - baseline dump 應放在本機 `backup/dev/baseline/`，避免被一般 `dev-backup` 輪替或 `dev-del-backup ALL=1` 誤刪
-- 本輪已先建立 `backup/dev/baseline/manifest.md`、`make dev-restore-baseline` 與 `make dev-smoke-analytics`
+- 本輪已先建立 baseline 規劃 manifest（現位於 `backup/manifest/dev/baseline/manifest.md`）、`make dev-restore-baseline` 與 `make dev-smoke-analytics`
 - 在該次盤點時，由於 repo 內沒有任何可用 dump，且本機 dev DB 查核仍為空資料 baseline，因此沒有提交 baseline dump；`make dev-restore-baseline` 會明確提示缺少 local baseline dump，`make dev-smoke-analytics` 會明確回報 `smoke failed`
 - 詳細設計見 [文件/minimal_analytics_baseline_plan.md](文件/minimal_analytics_baseline_plan.md)
 
@@ -461,7 +461,7 @@ make sync-sales-dims OWNER_USER_KEY=demo-owner OWNER_USER_ID=1 START_DATE=2025-0
 - `make dev-smoke-analytics` 會檢查 `pos_product_dim`、`pos_branch_dim`、`pos_sales_hourly_fact` 是否非空，並執行帶有排除關鍵字的商品排行榜 smoke query；資料不足時必須 `smoke failed`
 - restore 屬高風險操作，執行前會先自動做一份當前環境 backup，完成後再執行基本 PostgreSQL 驗證
 - `make dev-up RESTORE=1` / `make prod-up RESTORE=1` 會在容器啟動後進入 restore 流程，然後自動補跑 migrate
-- baseline 規劃 manifest 固定放在 [backup/dev/baseline/manifest.md](backup/dev/baseline/manifest.md)；若之後建立 local baseline dump，對應 backup manifest 應寫入 `backup/manifest/dev/baseline/*.md`
+- baseline 規劃 manifest 固定放在 [backup/manifest/dev/baseline/manifest.md](backup/manifest/dev/baseline/manifest.md)；若之後建立 local baseline dump，對應 backup manifest 應寫入 `backup/manifest/dev/baseline/*.md`
 
 ## 下一階段預計補上
 

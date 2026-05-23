@@ -32,6 +32,8 @@ MIGRATE_COMPLETED="false"
 SCHEMA_DRIFT_CHECKED="false"
 RESTART_COMPLETED="false"
 VALIDATION_COMPLETED="false"
+STORAGE_TYPE="local"
+AVAILABILITY_SCOPE="same-machine"
 NOT_IN_GIT_REASON="依憲法附則第 1 條：DB backup 實體檔不入 git"
 RULE_ADDENDUM="附則第 1 條：DB backup 實體檔不入 git"
 
@@ -59,6 +61,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --validation-completed)
       VALIDATION_COMPLETED="$2"
+      shift 2
+      ;;
+    --storage-type)
+      STORAGE_TYPE="$2"
+      shift 2
+      ;;
+    --availability-scope)
+      AVAILABILITY_SCOPE="$2"
       shift 2
       ;;
     --not-in-git-reason)
@@ -112,7 +122,9 @@ cat > "$manifest_file" <<EOF
 - backup_created_at: $created_at
 - file_size_bytes: $size_bytes
 - sha256: $checksum
-- storage_path: $REL_PATH
+- storage_type: $STORAGE_TYPE
+- local_path: $REL_PATH
+- availability_scope: $AVAILABILITY_SCOPE
 - restore_command: $RESTORE_COMMAND
 - not_in_git_reason: $NOT_IN_GIT_REASON
 - rule_addendum: $RULE_ADDENDUM

@@ -4,7 +4,7 @@ set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BASELINE_DIR="$PROJECT_DIR/backup/dev/baseline"
-MANIFEST_FILE="$BASELINE_DIR/manifest.md"
+MANIFEST_FILE="$PROJECT_DIR/backup/manifest/dev/baseline/manifest.md"
 BASELINE_ARG="${1:-}"
 
 baseline_files=()

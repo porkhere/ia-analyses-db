@@ -1,7 +1,7 @@
 # ia-analyses-db minimal analytics baseline plan
 
-更新日期：2026-05-20-22:54
-校準日期：2026-05-20-22:54
+更新日期：2026-05-24-03:15
+校準日期：2026-05-24-03:15
 
 註：2026-05-20-22:54 起已啟用附則第 1 條。DB backup 實體檔不入 git；本文件中的現行方案一律改以「local dump + committed manifest」理解，舊的 `backup 入 git`、`tracked baseline dump` 字樣若未另外標示，均視為已被新政策覆蓋。
 
@@ -82,7 +82,7 @@
 
 ## 2026-05-20 本輪實作狀態
 
-- 已建立 `backup/dev/baseline/manifest.md`，把 baseline 名稱、建立時間、owner/date window 狀態、主要表 row count、smoke expectation 與注意事項固定下來
+- 已建立 `backup/manifest/dev/baseline/manifest.md`，把 baseline 名稱、建立時間、owner/date window 狀態、主要表 row count、smoke expectation 與注意事項固定下來
 - 已新增 `make dev-restore-baseline`，只接受本機 `backup/dev/baseline/*.dump`；若目前沒有 local baseline dump，必須明確失敗
 - 已新增 `make dev-smoke-analytics`，會檢查 `pos_product_dim`、`pos_branch_dim`、`pos_sales_hourly_fact`，並執行帶排除關鍵字的商品排行榜 smoke query；資料不足時必須 non-zero 結束
 - 已驗證目前 repo 內沒有任何 `.dump` / snapshot 可直接作為 baseline，且本機 dev PostgreSQL 目前仍是空資料 baseline，因此本輪沒有提交正式 baseline dump
@@ -158,7 +158,7 @@
 
 - 一般輪替備份：本機 `backup/dev/*.dump`、`backup/prod/*.dump`
 - baseline dump：本機 `backup/dev/baseline/*.dump`
-- 提交到 git 的追蹤證據：`backup/manifest/**/*.md` 與 `backup/dev/baseline/manifest.md`
+- 提交到 git 的追蹤證據：`backup/manifest/**/*.md`
 - 一般輪替備份仍維持最多 5 份
 - baseline dump 不參與自動 prune，也不應被 `ALL=1` 清除
 
@@ -179,7 +179,7 @@
 
 1. 從已驗證的本機 PostgreSQL 或其他已確認來源，建立單一 owner、小日期窗的 local dev baseline dump
 2. 把實際 dump 放到本機 `backup/dev/baseline/`
-3. 依實際 dump 回填 `backup/dev/baseline/manifest.md` 與對應 `backup/manifest/dev/baseline/*.md` 的 owner、日期窗、row count、checksum 與 smoke expectation
+3. 依實際 dump 回填 `backup/manifest/dev/baseline/manifest.md` 與對應 `backup/manifest/dev/baseline/*.md` 的 owner、日期窗、row count、checksum 與 smoke expectation
 4. 驗證 restore 後三張核心 analytics 表非空，且商品排行榜 smoke query 可跑
 
 ## 建議的 baseline 內容下限

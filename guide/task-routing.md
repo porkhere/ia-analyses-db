@@ -1,12 +1,12 @@
 # ia-analyses-db task routing
 
-更新日期：2026-05-24-02:36
-校準日期：2026-05-24-02:36
+更新日期：2026-05-24-03:15
+校準日期：2026-05-24-03:15
 
 | 任務 | 先讀 | 再進入 | 不要直接做 |
 |---|---|---|---|
 | DB 文件 / guide 校準 | `README.md`、`文件/README.md`、`文件/架構指南.md` | `guide/index.md` | 不要先進 `文件/過時/` |
-| DB runtime / backup 問題 | `README.md`、`文件/架構指南.md` | `Makefile`、`scripts/` | 未授權前不要做 restore / 高風險 compose |
+| DB runtime / backup 問題 | `README.md`、`文件/架構指南.md` | `Makefile`、`scripts/`、`backup/manifest/` | 未授權前不要做 restore / 高風險 compose |
 | sales-pipe 導航或排查 | `guide/code-navigation-index.md` | `cmd/sales-pipe/main.go`、`internal/salespipe/controller.go`、`internal/sales/write_skeleton.go` | 不要先跑 generic build |
 | sync-sales-dims 導航或排查 | `guide/code-navigation-index.md` | `cmd/sync-sales-dims/main.go`、`internal/athena/sales_dim_sync.go`、`internal/postgres/sales_dim_sync_writer.go` | 不要把 dimension sync 誤當 sales fact write |
 | validation gate 理解 | `guide/code-navigation-index.md` | `internal/athena/sales_candidate_provider.go`、`internal/validation/gates.go` | 不要只看 README 就假設 gate 細節 |
