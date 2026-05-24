@@ -1,13 +1,27 @@
 # ia-analyses-db
 
-更新日期：2026-05-24-16:27
-校準日期：2026-05-24-16:27
+更新日期：2026-05-24-18:05
+校準日期：2026-05-24-18:05
 
 註：2026-05-19 起，正式操作入口改為 `make dev-*` / `make prod-*`。本文若出現 `db-*`，除非明確標示為歷史紀錄，否則一律以新命名為準。
 
 註：2026-05-20-22:54 起已啟用 `agent-rule/rule-add.md` 附則第 1 條。現行落地只有受保護 `.gitignore` 規則與本機 dump 管理；repo 不再建立或維護 backup manifest。本文歷史段落若出現 `backup/manifest`、`committed manifest`、`dev-mark-runtime-aligned` 等字樣，均視為 2026-05-20 過度擴張 round 的歷史紀錄，不是現行制度。
 
 這個 repo 是 IA 分析資料庫的第一階段骨架，目標是先把 PostgreSQL、資料表結構、備份還原流程，以及 `sync-athena` 的 CLI 入口建立起來，讓後續 Athena 同步邏輯可以在同一個倉庫內逐步落地。
+
+## 2026-05-24 17:34 Go 遷移 bridge
+
+- `ia-analyses-go` 已建立第一階段 Go coding slice，先承接 `sales-pipe`、`sync-sales-dims` 與其最小依賴 package
+- `ia-analyses-go` 本輪已補上 help / dry-run / `.env.example` 最小操作入口；後續 `sales-pipe`、`sync-sales-dims` 的主要操作 repo 視為 `ia-analyses-go`
+- 本 repo 目前仍保留原始 Go 檔與既有 target，作為過渡期 bridge copy；本輪不刪除 source、不改 runtime 入口
+- 若任務明確是 phase-1 遷移後的 Go coding 變更，優先先讀 `../ia-analyses-go/guide/code-navigation-index.md`
+
+## 目前正式主責
+
+- DB 啟動與容器對齊
+- backup / restore / baseline restore
+- schema / patch / seed 與 DB 管理
+- Go bridge copy 對照（僅供過渡期比對，不再作為主要操作入口）
 
 ## 2026-05-24 16:27 附則第 1 條校準結果
 

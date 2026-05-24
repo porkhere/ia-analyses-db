@@ -1,5 +1,7 @@
 package main
 
+// Bridge copy only: future sales-pipe command edits should land in ia-analyses-go.
+
 import (
 	"context"
 	"flag"
