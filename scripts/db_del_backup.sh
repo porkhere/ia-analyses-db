@@ -18,16 +18,9 @@ APP_ENV="${APP_ENV:-dev}"
 BACKUP_DIR="$PROJECT_DIR/backup/$APP_ENV"
 TARGET="${1:-}"
 
-manifest_for_backup() {
-  local backup_file="$1"
-  local backup_relative="${backup_file#$PROJECT_DIR/backup/}"
-  echo "$PROJECT_DIR/backup/manifest/${backup_relative%.dump}.md"
-}
-
 if [[ "$TARGET" = "all" ]]; then
   while IFS= read -r backup_file; do
     rm -f "$backup_file"
-    rm -f "$(manifest_for_backup "$backup_file")"
   done < <(find "$BACKUP_DIR" -maxdepth 1 -type f -name '*.dump' ! -name '.gitkeep' -print)
   echo "all dump backups deleted"
   exit 0
@@ -54,6 +47,5 @@ if [[ ! -f "$TARGET" ]]; then
 fi
 
 rm -f "$TARGET"
-rm -f "$(manifest_for_backup "$TARGET")"
 echo "app_env: $APP_ENV"
 echo "backup deleted: $TARGET"

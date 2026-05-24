@@ -1,13 +1,20 @@
 # ia-analyses-db
 
-更新日期：2026-05-24-03:15
-校準日期：2026-05-24-03:15
+更新日期：2026-05-24-16:27
+校準日期：2026-05-24-16:27
 
 註：2026-05-19 起，正式操作入口改為 `make dev-*` / `make prod-*`。本文若出現 `db-*`，除非明確標示為歷史紀錄，否則一律以新命名為準。
 
-註：2026-05-20-22:54 起已啟用 `agent-rule/rule-add.md` 附則第 1 條。自此開始，DB backup 實體檔（包含一般 backup 與 baseline dump）不入 git；repo 只提交 backup manifest、metadata 與文件。本文歷史段落若出現 `tracked baseline dump`、`backup 入 git` 等字樣，均視為附則生效前的舊政策。
+註：2026-05-20-22:54 起已啟用 `agent-rule/rule-add.md` 附則第 1 條。現行落地只有受保護 `.gitignore` 規則與本機 dump 管理；repo 不再建立或維護 backup manifest。本文歷史段落若出現 `backup/manifest`、`committed manifest`、`dev-mark-runtime-aligned` 等字樣，均視為 2026-05-20 過度擴張 round 的歷史紀錄，不是現行制度。
 
 這個 repo 是 IA 分析資料庫的第一階段骨架，目標是先把 PostgreSQL、資料表結構、備份還原流程，以及 `sync-athena` 的 CLI 入口建立起來，讓後續 Athena 同步邏輯可以在同一個倉庫內逐步落地。
+
+## 2026-05-24 16:27 附則第 1 條校準結果
+
+- `scripts/db_write_backup_manifest.sh`、`scripts/db_mark_runtime_aligned.sh` 與對應 Makefile target 已移除，DB backup / restore 回到 local dump only
+- 現行正式落地是：`.gitignore` 保護 `backup/**/*.dump`、備份檔名帶日期時間、一般 backup 維持每環境最多 5 份
+- `backup/manifest/` 若仍留在 repo，只視為 2026-05-20 歷史 round 的 legacy archive，不再是 active truth source，也不得再擴張或回填
+- baseline 流程收斂為：本機 `backup/dev/baseline/*.dump` + `make dev-restore-baseline` + `make dev-smoke-analytics`
 
 ## 文件入口
 
@@ -448,20 +455,20 @@ make sync-sales-dims OWNER_USER_KEY=demo-owner OWNER_USER_ID=1 START_DATE=2025-0
 ## 備份與還原
 
 - 一般 backup 與 baseline dump 實體檔固定留在本機 `backup/dev/` 或 `backup/prod/`，依附則第 1 條不入 git
-- backup 追蹤證據固定寫入 `backup/manifest/`；一般 dev backup 目前可見 [backup/manifest/dev/2026-05-20-17-37.md](backup/manifest/dev/2026-05-20-17-37.md) 等 manifest
+- repo 不再建立或維護 backup manifest；若需要交接 baseline 資訊，應寫在 active 文件或交接材料，而不是回填 `backup/manifest/`
 - 備份檔名格式固定為 `YYYY-MM-DD-HH-MM.dump`，每個環境最多保留 5 份，超過時會自動刪除最舊檔
-- 若要建立可重現的 dev analytics baseline，實體 dump 應放在本機 `backup/dev/baseline/` 子目錄，不和一般輪替備份混放；對應 manifest 應提交到 `backup/manifest/dev/baseline/`
+- 若要建立可重現的 dev analytics baseline，實體 dump 應放在本機 `backup/dev/baseline/` 子目錄，不和一般輪替備份混放
 - `make dev-size` / `make prod-size` 會用 PostgreSQL 內建函式計算當前資料庫大小，單位 MB
-- `make dev-backup` / `make prod-backup` 會建立目前環境的 local `.dump` 備份，並同步寫入 manifest
+- `make dev-backup` / `make prod-backup` 會建立目前環境的 local `.dump` 備份
 - `make dev-backup-list` / `make prod-backup-list` 會依新到舊列出目前環境可還原備份與大小
 - `make dev-sync-seeds` / `make prod-sync-seeds` 會安全地重跑 `db/init/001_schema.sql`，把最新 seed upsert 到現有 DB，不需要刪 volume 重建
 - `make dev-apply-patches` / `make prod-apply-patches` 會套用 `db/patches/*.sql`，用安全方式更新現有 DB schema
-- `make dev-restore` / `make prod-restore` 會先列出本機備份、接受數字選擇，輸入 `n` 可退出；restore 完成後會更新對應 manifest
+- `make dev-restore` / `make prod-restore` 會先列出本機備份、接受數字選擇，輸入 `n` 可退出；restore 完成後只做基本 PostgreSQL 驗證，不再回寫 manifest
 - `make dev-restore-baseline` 只會讀本機 `backup/dev/baseline/*.dump`；若目前尚無 local baseline dump，會明確失敗，不會假裝 restore 成功
 - `make dev-smoke-analytics` 會檢查 `pos_product_dim`、`pos_branch_dim`、`pos_sales_hourly_fact` 是否非空，並執行帶有排除關鍵字的商品排行榜 smoke query；資料不足時必須 `smoke failed`
 - restore 屬高風險操作，執行前會先自動做一份當前環境 backup，完成後再執行基本 PostgreSQL 驗證
 - `make dev-up RESTORE=1` / `make prod-up RESTORE=1` 會在容器啟動後進入 restore 流程，然後自動補跑 migrate
-- baseline 規劃 manifest 固定放在 [backup/manifest/dev/baseline/manifest.md](backup/manifest/dev/baseline/manifest.md)；若之後建立 local baseline dump，對應 backup manifest 應寫入 `backup/manifest/dev/baseline/*.md`
+- baseline 的日期窗、row count、checksum 與交接資訊若需保留，應寫入 [文件/minimal_analytics_baseline_plan.md](文件/minimal_analytics_baseline_plan.md) 或本輪交接材料
 
 ## 下一階段預計補上
 

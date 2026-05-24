@@ -36,7 +36,7 @@
 
 - path: 文件/minimal_analytics_baseline_plan.md
   type: db
-  truth_source: scripts/db_restore_baseline.sh, scripts/db_smoke_analytics.sh, backup/manifest/
+  truth_source: scripts/db_restore_baseline.sh, scripts/db_smoke_analytics.sh, backup/dev/baseline/
   last_synced: 2026-05-24
   verify: N/A
 

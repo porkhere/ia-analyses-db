@@ -1,11 +1,11 @@
 # ia-analyses-db architecture map
 
-更新日期：2026-05-24-02:36
-校準日期：2026-05-24-02:36
+更新日期：2026-05-24-16:27
+校準日期：2026-05-24-16:27
 
 | 功能線 | 主入口 | 核心 flow | 資料存取 / 外部依賴 | 驗證入口 |
 |---|---|---|---|---|
-| DB runtime / backup | `Makefile` | `dev/prod target -> scripts/*.sh -> docker compose / psql` | `.env`、Docker Compose、PostgreSQL、backup/manifest | `make help` |
+| DB runtime / backup | `Makefile` | `dev/prod target -> scripts/*.sh -> docker compose / psql` | `.env`、Docker Compose、PostgreSQL、本機 backup 目錄 | `make help` |
 | Sales fact pipeline controller | `cmd/sales-pipe/main.go` | `main.go -> internal/salespipe/controller.go -> internal/sales/write_skeleton.go` | Athena、PostgreSQL、`state/`、`reports/` | `guide/code-navigation-index.md` |
 | Sales dimension sync | `cmd/sync-sales-dims/main.go` | `main.go -> internal/athena/sales_dim_sync.go -> internal/postgres/sales_dim_sync_writer.go` | Athena、PostgreSQL | `guide/code-navigation-index.md` |
 | Candidate / validation gate | `internal/athena/sales_candidate_provider.go` | `candidate provider -> validation reader -> pre/post-insert report` | Athena metrics、validation gate、persisted target metrics | `guide/code-navigation-index.md` |
