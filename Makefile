@@ -13,9 +13,7 @@ DOCKER_COMPOSE := docker compose --project-directory $(PROJECT_DIR) --env-file $
 	dev-up dev-wait dev-down dev-restart dev-migrate dev-size dev-backup dev-backup-list dev-sync-seeds dev-apply-patches dev-del-backup dev-restore dev-restore-baseline dev-smoke-analytics \
 	prod-up prod-wait prod-down prod-restart prod-migrate prod-size prod-backup prod-backup-list prod-sync-seeds prod-apply-patches prod-del-backup prod-restore \
 	sales-pipe-status sales-pipe-plan sales-pipe-validate sales-pipe-write-local sales-pipe-resume sales-pipe-report \
-	sync-athena-dry sync-athena-dry-fast sync-athena-dry-full sync-athena-validate sync-athena-write-plan sync-athena-write-local \
-	sync-sales-dims-plan sync-sales-dims \
-	db-up db-wait db-down db-restart db-size db-backup db-backup-list db-sync-seeds db-apply-patches db-del-backup db-restore db-sync-athena
+	sync-sales-dims-plan sync-sales-dims
 
 define require_env
 	@if [ ! -f "$(ENV_FILE)" ]; then echo "找不到 .env，請先執行 make $(1)-env"; exit 1; fi
@@ -67,37 +65,29 @@ help:
 	@echo "  make prod-apply-patches"
 	@echo "  make prod-del-backup [BACKUP_FILE=YYYY-MM-DD-HH-MM.dump|ALL=1]"
 	@echo ""
-	@echo "過渡期 bridge copy 對照"
+	@echo "開發測試用（bridge copy，主要操作入口請用 ia-analyses-go）"
 	@echo "  make sales-pipe-status"
 	@echo "  make sales-pipe-plan OWNER_USER_KEY=<key> OWNER_USER_ID=<id> START_DATE=YYYY-MM-DD END_DATE=YYYY-MM-DD"
 	@echo "  make sales-pipe-validate OWNER_USER_KEY=<key> OWNER_USER_ID=<id> START_DATE=YYYY-MM-DD END_DATE=YYYY-MM-DD"
 	@echo "  make sales-pipe-write-local OWNER_USER_KEY=<key> OWNER_USER_ID=<id> START_DATE=YYYY-MM-DD END_DATE=YYYY-MM-DD [CONFIRM_LONG_RUN=1]"
 	@echo "  make sales-pipe-resume [FORCE=1] [CONFIRM_LONG_RUN=1]"
 	@echo "  make sales-pipe-report"
-	@echo "  make sync-athena-dry-fast OWNER_USER_KEY=<key> START_DATE=YYYY-MM-DD [END_DATE=YYYY-MM-DD] [PREVIEW_LIMIT=20]"
-	@echo "  make sync-athena-dry-full OWNER_USER_KEY=<key> START_DATE=YYYY-MM-DD [END_DATE=YYYY-MM-DD] [PREVIEW_LIMIT=20]"
-	@echo "  make sync-athena-validate OWNER_USER_KEY=<key> OWNER_USER_ID=<id> START_DATE=YYYY-MM-DD [END_DATE=YYYY-MM-DD]"
-	@echo "  make sync-athena-write-plan OWNER_USER_KEY=<key> OWNER_USER_ID=<id> START_DATE=YYYY-MM-DD [END_DATE=YYYY-MM-DD]"
-	@echo "  make sync-athena-write-local OWNER_USER_KEY=<key> OWNER_USER_ID=<id> START_DATE=YYYY-MM-DD END_DATE=YYYY-MM-DD  # 最多 2 天"
 	@echo "  make sync-sales-dims-plan OWNER_USER_KEY=<key> OWNER_USER_ID=<id> START_DATE=YYYY-MM-DD [END_DATE=YYYY-MM-DD]"
 	@echo "  make sync-sales-dims OWNER_USER_KEY=<key> OWNER_USER_ID=<id> START_DATE=YYYY-MM-DD [END_DATE=YYYY-MM-DD]"
-	@echo ""
-	@echo "說明"
-	@echo "  - sales-pipe-*、sync-sales-dims* 的主要操作入口已移到 ia-analyses-go"
-	@echo "  - 本 repo 保留這些 target 僅供 bridge copy 過渡期對照"
-	@echo "  - 所有 sales-pipe-*、sync-athena-*、sync-sales-dims* 都會使用目前 .env"
-	@echo "  - 切環境前請先執行 make dev-env 或 make prod-env"
-	@echo "  - 舊 db-* 命名已退役，正式入口以 dev-* / prod-* 為準"
 
 env-status:
 	@$(call require_current_env)
 	@grep '^APP_ENV=' "$(ENV_FILE)" | cut -d= -f2 | xargs -I{} echo "current_app_env: {}"
+
+# ── 環境切換 ──────────────────────────────────────────────
 
 dev-env:
 	$(call install_env,dev,$(DEV_ENV_SOURCE))
 
 prod-env:
 	$(call install_env,prod,$(PROD_ENV_SOURCE))
+
+# ── 容器與資料庫 ──────────────────────────────────────────
 
 dev-up:
 	$(call require_env,dev)
@@ -211,6 +201,9 @@ prod-restore:
 	$(call require_env,prod)
 	@$(PROJECT_DIR)scripts/db_restore.sh "$(BACKUP_FILE)"
 
+# ── 開發測試用（bridge copy） ─────────────────────────────
+# 主要操作入口已移到 ia-analyses-go，以下僅供對照與開發測試
+
 sales-pipe-status:
 	@$(call require_current_env)
 	@set -a; \
@@ -256,48 +249,6 @@ sales-pipe-report:
 	  set +a; \
 	  cd "$(PROJECT_DIR)" && go run ./cmd/sales-pipe --mode report
 
-sync-athena-dry: sync-athena-dry-fast
-
-sync-athena-dry-fast:
-	@$(call require_current_env)
-	@if [ -z "$(OWNER_USER_KEY)" ] || [ -z "$(START_DATE)" ]; then echo "OWNER_USER_KEY 與 START_DATE 為必填"; exit 1; fi
-	@set -a; \
-	  . "$(ENV_FILE)"; \
-	  set +a; \
-	  cd "$(PROJECT_DIR)" && go run ./cmd/sync-athena --owner-user-key "$(OWNER_USER_KEY)" --start-date "$(START_DATE)" $(if $(END_DATE),--end-date "$(END_DATE)",) $(if $(PREVIEW_LIMIT),--preview-limit "$(PREVIEW_LIMIT)",) --dry-run --dry-run-mode fast
-
-sync-athena-dry-full:
-	@$(call require_current_env)
-	@if [ -z "$(OWNER_USER_KEY)" ] || [ -z "$(START_DATE)" ]; then echo "OWNER_USER_KEY 與 START_DATE 為必填"; exit 1; fi
-	@set -a; \
-	  . "$(ENV_FILE)"; \
-	  set +a; \
-	  cd "$(PROJECT_DIR)" && go run ./cmd/sync-athena --owner-user-key "$(OWNER_USER_KEY)" --start-date "$(START_DATE)" $(if $(END_DATE),--end-date "$(END_DATE)",) $(if $(PREVIEW_LIMIT),--preview-limit "$(PREVIEW_LIMIT)",) --dry-run --dry-run-mode full
-
-sync-athena-validate:
-	@$(call require_current_env)
-	@if [ -z "$(OWNER_USER_KEY)" ] || [ -z "$(OWNER_USER_ID)" ] || [ -z "$(START_DATE)" ]; then echo "OWNER_USER_KEY、OWNER_USER_ID 與 START_DATE 為必填"; exit 1; fi
-	@set -a; \
-	  . "$(ENV_FILE)"; \
-	  set +a; \
-	  cd "$(PROJECT_DIR)" && go run ./cmd/sync-athena --owner-user-key "$(OWNER_USER_KEY)" --owner-user-id "$(OWNER_USER_ID)" --start-date "$(START_DATE)" $(if $(END_DATE),--end-date "$(END_DATE)",) --validate-only
-
-sync-athena-write-plan:
-	@$(call require_current_env)
-	@if [ -z "$(OWNER_USER_KEY)" ] || [ -z "$(OWNER_USER_ID)" ] || [ -z "$(START_DATE)" ]; then echo "OWNER_USER_KEY、OWNER_USER_ID 與 START_DATE 為必填"; exit 1; fi
-	@set -a; \
-	  . "$(ENV_FILE)"; \
-	  set +a; \
-	  cd "$(PROJECT_DIR)" && go run ./cmd/sync-athena --owner-user-key "$(OWNER_USER_KEY)" --owner-user-id "$(OWNER_USER_ID)" --start-date "$(START_DATE)" $(if $(END_DATE),--end-date "$(END_DATE)",) --write-pg
-
-sync-athena-write-local:
-	@$(call require_current_env)
-	@if [ -z "$(OWNER_USER_KEY)" ] || [ -z "$(OWNER_USER_ID)" ] || [ -z "$(START_DATE)" ] || [ -z "$(END_DATE)" ]; then echo "OWNER_USER_KEY、OWNER_USER_ID、START_DATE 與 END_DATE 為必填"; exit 1; fi
-	@set -a; \
-	  . "$(ENV_FILE)"; \
-	  set +a; \
-	  cd "$(PROJECT_DIR)" && go run ./cmd/sync-athena --owner-user-key "$(OWNER_USER_KEY)" --owner-user-id "$(OWNER_USER_ID)" --start-date "$(START_DATE)" --end-date "$(END_DATE)" --write-pg --local-only-actual-write
-
 sync-sales-dims-plan:
 	@$(call require_current_env)
 	@if [ -z "$(OWNER_USER_KEY)" ] || [ -z "$(OWNER_USER_ID)" ] || [ -z "$(START_DATE)" ]; then echo "OWNER_USER_KEY、OWNER_USER_ID 與 START_DATE 為必填"; exit 1; fi
@@ -313,51 +264,3 @@ sync-sales-dims:
 	  . "$(ENV_FILE)"; \
 	  set +a; \
 	  cd "$(PROJECT_DIR)" && go run ./cmd/sync-sales-dims --owner-user-key "$(OWNER_USER_KEY)" --owner-user-id "$(OWNER_USER_ID)" --start-date "$(START_DATE)" $(if $(END_DATE),--end-date "$(END_DATE)",) --apply
-
-db-up:
-	@echo "db-up 已退役；請改用 make dev-up 或 make prod-up"
-	@exit 1
-
-db-wait:
-	@echo "db-wait 已退役；請改用 make dev-wait 或 make prod-wait"
-	@exit 1
-
-db-down:
-	@echo "db-down 已退役；請改用 make dev-down 或 make prod-down"
-	@exit 1
-
-db-restart:
-	@echo "db-restart 已退役；請改用 make dev-restart 或 make prod-restart"
-	@exit 1
-
-db-size:
-	@echo "db-size 已退役；請改用 make dev-size 或 make prod-size"
-	@exit 1
-
-db-backup:
-	@echo "db-backup 已退役；請改用 make dev-backup 或 make prod-backup"
-	@exit 1
-
-db-backup-list:
-	@echo "db-backup-list 已退役；請改用 make dev-backup-list 或 make prod-backup-list"
-	@exit 1
-
-db-sync-seeds:
-	@echo "db-sync-seeds 已退役；請改用 make dev-sync-seeds 或 make prod-sync-seeds"
-	@exit 1
-
-db-apply-patches:
-	@echo "db-apply-patches 已退役；請改用 make dev-apply-patches 或 make prod-apply-patches"
-	@exit 1
-
-db-del-backup:
-	@echo "db-del-backup 已退役；請改用 make dev-del-backup 或 make prod-del-backup"
-	@exit 1
-
-db-restore:
-	@echo "db-restore 已退役；請改用 make dev-restore 或 make prod-restore"
-	@exit 1
-
-db-sync-athena:
-	@echo "db-sync-athena 已停用；請先執行 make dev-env 或 make prod-env，然後改用 sales-pipe-* 或 sync-athena-* / sync-sales-dims*"
-	@exit 1
