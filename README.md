@@ -35,7 +35,7 @@
 - `scripts/`：backup、restore、patch、smoke test 等 shell 入口
 - `backup/`：本機 dump 放置位置，實體 dump 不入 git
 - `schema/`：來源 schema 或對照資料
-- `cmd/`、`internal/`：過渡期 bridge copy，供和 `ia-analyses-go` 對照
+- `cmd/`、`internal/`：過渡期 bridge copy，供和 `ia-analyses-go` 對照（`sync-athena-*` 等 Makefile target 因 `cmd/sync-athena` 不存在而無法實際執行）
 
 ## 資料模型重點
 
