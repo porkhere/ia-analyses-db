@@ -12,6 +12,7 @@ DOCKER_COMPOSE := docker compose --project-directory $(PROJECT_DIR) --env-file $
 	dev-env prod-env \
 	dev-up dev-wait dev-down dev-restart dev-migrate dev-size dev-backup dev-backup-list dev-sync-seeds dev-apply-patches dev-del-backup dev-restore dev-restore-baseline dev-smoke-analytics \
 	prod-up prod-wait prod-down prod-restart prod-migrate prod-size prod-backup prod-backup-list prod-sync-seeds prod-apply-patches prod-del-backup prod-restore \
+	db-psql \
 	sales-pipe-status sales-pipe-plan sales-pipe-validate sales-pipe-write-local sales-pipe-resume sales-pipe-report \
 	sync-sales-dims-plan sync-sales-dims
 
@@ -58,6 +59,7 @@ help:
 	@echo "  make prod-restore [BACKUP_FILE=YYYY-MM-DD-HH-MM.dump]"
 	@echo ""
 	@echo "維護工具"
+	@echo "  make db-psql                 進入目前 .env 所指向的資料庫 psql shell"
 	@echo "  make dev-sync-seeds          依目前 schema 檔重跑 seed 同步"
 	@echo "  make dev-apply-patches       套用 db/patches/*.sql"
 	@echo "  make dev-del-backup [BACKUP_FILE=YYYY-MM-DD-HH-MM.dump|ALL=1]"
@@ -200,6 +202,10 @@ prod-del-backup:
 prod-restore:
 	$(call require_env,prod)
 	@$(PROJECT_DIR)scripts/db_restore.sh "$(BACKUP_FILE)"
+
+db-psql:
+	@$(call require_current_env)
+	@$(DOCKER_COMPOSE) exec postgres psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
 
 # ── 開發測試用（bridge copy） ─────────────────────────────
 # 主要操作入口已移到 ia-analyses-go，以下僅供對照與開發測試
