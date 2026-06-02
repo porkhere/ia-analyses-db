@@ -205,7 +205,7 @@ prod-restore:
 
 db-psql:
 	@$(call require_current_env)
-	@$(DOCKER_COMPOSE) exec postgres psql -U "$$PGUSER" -d "$$PGDATABASE"
+	@$(DOCKER_COMPOSE) exec postgres sh -c 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
 
 # ── 開發測試用（bridge copy） ─────────────────────────────
 # 主要操作入口已移到 ia-analyses-go，以下僅供對照與開發測試
