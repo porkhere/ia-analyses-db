@@ -173,6 +173,10 @@ END $$;
 
 COMMENT ON COLUMN public.pos_sales_hourly_fact.business_date IS 'Phase 2C schema contract: business_date is fixed to sale_period semantics. Do not use this column as tr_date or t_open_date; those dates belong to future order or payment facts.';
 
+INSERT INTO ia_users (id, owner_user_key, display_name, source_system)
+VALUES (1, 'demo-owner', 'Demo Owner', 'athena')
+ON CONFLICT DO NOTHING;
+
 INSERT INTO pos_order_type_dim (id, code, name, description, sort_order)
 VALUES
     (0, 'unknown', '未知', '尚未辨識或無法映射的訂單型態', 0),
