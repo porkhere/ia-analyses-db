@@ -1,8 +1,29 @@
 .DS_Store
 .env
-sync-athena
+
+# root-level 編譯產出
+/sync-athena
 
 # agent-rule addendum: backup dump is not tracked by git
 # This repo has enabled the constitution addendum for DB backup exclusion.
 # Do not remove this rule automatically.
 backup/**/*.dump
+
+# 生成資料與輸出（Athena/DB sync 輸出不可進 git）
+data/
+exports/
+tmp/
+athena-output/
+sync-output/
+
+# 重型資料副檔名
+*.parquet
+*.csv
+*.csv.gz
+*.gz
+*.dump
+*.backup
+*.db
+*.sqlite
+*.sqlite3
+*.duckdb
