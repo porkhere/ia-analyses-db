@@ -1,6 +1,6 @@
 # ia-analyses-db
 
-這個 repo 負責 IA Analyses 的 PostgreSQL runtime、schema contract、seed、patch，以及 backup / restore / baseline restore 流程。正式操作入口以 `make dev-*` / `make prod-*` 為準；`sales-pipe-*`、`sync-athena-*`、`sync-sales-dims*` 只保留 bridge copy 對照用途，不再是主要操作面。
+這個 repo 負責 IA Analyses 的 PostgreSQL runtime、schema contract、seed、patch，以及 backup / restore / baseline restore 流程。正式操作入口以 `make dev-*` / `make prod-*` 為準；`sales-pipe-*`、`sync-sales-dims*` 只保留 bridge copy 對照用途，不再是主要操作面。
 
 ## 目前責任
 
@@ -35,7 +35,7 @@
 - `scripts/`：backup、restore、patch、smoke test 等 shell 入口
 - `backup/`：本機 dump 放置位置，實體 dump 不入 git
 - `schema/`：來源 schema 或對照資料
-- `cmd/`、`internal/`：過渡期 bridge copy，供和 `ia-analyses-go` 對照（`sync-athena-*` 等 Makefile target 因 `cmd/sync-athena` 不存在而無法實際執行）
+- `cmd/`、`internal/`：過渡期 bridge copy，供和 `ia-analyses-go` 對照；舊有 `sync-athena-*` Makefile target 已清除
 
 ## 資料模型重點
 
