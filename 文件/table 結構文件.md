@@ -125,6 +125,8 @@ grain：`owner_user_id + business_date + hour_of_day + branch_id + product_no + 
 - `included_tax_milli`、`excluded_tax_milli`、`tax_milli`
 - `created_at`、`updated_at`
 
+註記：`pos_sales_hourly_fact` 與 `pos_product_dim` 已在 smoke analytics 的 product-summary 檢查中被 JOIN 用於產生 product-summary grain（aggregation by `owner_user_id` + `product_no` + `product_name`），以驗證前端所需口徑能否由現有 fact/dim 計算得出。
+
 唯一鍵就是這張 fact 的正式 grain。
 
 ## Index 重點

@@ -30,6 +30,12 @@
   - 關聯檔案：`scripts/db_smoke_analytics.sh`、`ia-analyses-go/internal/postgres/stat_feed_reader.go`
   - 建議作法：補一個小型 smoke 查詢，驗證 `pos_sales_hourly_fact` join `pos_product_dim` 後能產出 product-summary grain，避免前端展示時才發現資料口徑缺口。
 
+- [x] 補 smoke analytics 的前端分析口徑檢查（部分完成）
+  - 現況更新（2026/06/22）：已在 `scripts/db_smoke_analytics.sh` 中新增一個 minimal product-summary grain aggregation query（count 與 top5 preview），該腳本經 `bash -n` 語法檢查通過。
+  - 執行狀態：已新增 query 並提交，但 **尚未在本環境執行實際 runtime smoke**（若需要我可以嘗試執行 `make dev-smoke-analytics`，但可能因 Docker/容器未啟動或環境限制而無法連線）。
+  - 關聯檔案：`scripts/db_smoke_analytics.sh`、`ia-analyses-go/internal/postgres/stat_feed_reader.go`
+  - 建議作法：若要標記為完全完成，需在可連到容器的環境執行 `make dev-smoke-analytics` 並確認有非零的 preview 結果。
+
 - [ ] 決定 `pos_branch_dim.group_code` 的授權來源
   - 現況：schema 有欄位，但目前同步刻意寫 NULL；這對 MVP 不阻塞，但若前端要 branch group filter 會變成需求缺口。
   - 關聯檔案：`db/init/001_schema.sql`、`文件/table 結構文件.md`
