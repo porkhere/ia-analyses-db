@@ -32,7 +32,7 @@
 
 - [x] 補 smoke analytics 的前端分析口徑檢查（部分完成）
   - 現況更新（2026/06/22）：已在 `scripts/db_smoke_analytics.sh` 中新增一個 minimal product-summary grain aggregation query（count 與 top5 preview），該腳本經 `bash -n` 語法檢查通過。
-  - 執行狀態：已新增 query 並提交，但 **尚未在本環境執行實際 runtime smoke**（若需要我可以嘗試執行 `make dev-smoke-analytics`，但可能因 Docker/容器未啟動或環境限制而無法連線）。
+  - 執行狀態：已新增 query 並提交；**2026/06/22 已在本機執行 runtime smoke 並修正 preview ambiguous 欄位，preview 成功且有 top5 結果（仍保留原有 checks）**。
   - 關聯檔案：`scripts/db_smoke_analytics.sh`、`ia-analyses-go/internal/postgres/stat_feed_reader.go`
   - 建議作法：若要標記為完全完成，需在可連到容器的環境執行 `make dev-smoke-analytics` 並確認有非零的 preview 結果。
 

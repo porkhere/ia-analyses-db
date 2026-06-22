@@ -146,13 +146,13 @@ else
   # preview top 5 product-summary rows
   if product_summary_preview="$(docker compose --project-directory "$PROJECT_DIR" --env-file "$ENV_FILE" exec -T postgres \
     psql -U "$PGUSER" -d "$PGDATABASE" -v ON_ERROR_STOP=1 -At <<'SQL'
-SELECT owner_user_id || '|' || product_no || '|' || product_name || '|' || SUM(qty_milli) || '|' || SUM(net_sales_milli)
+SELECT fact.owner_user_id || '|' || fact.product_no || '|' || product.product_name || '|' || SUM(fact.qty_milli) || '|' || SUM(fact.net_sales_milli)
 FROM public.pos_sales_hourly_fact AS fact
 JOIN public.pos_product_dim AS product
   ON product.owner_user_id = fact.owner_user_id
  AND product.product_no = fact.product_no
-GROUP BY owner_user_id, product_no, product_name
-ORDER BY SUM(net_sales_milli) DESC NULLS LAST
+GROUP BY fact.owner_user_id, fact.product_no, product.product_name
+ORDER BY SUM(fact.net_sales_milli) DESC NULLS LAST
 LIMIT 5;
 SQL
 )"; then
