@@ -45,10 +45,16 @@
   - 關聯檔案：`scripts/db_smoke_analytics.sh`、`ia-analyses-go/internal/postgres/stat_feed_reader.go`
   - 建議作法：若要標記為完全完成，需在可連到容器的環境執行 `make dev-smoke-analytics` 並確認有非零的 preview 結果。
 
-- [ ] 決定 `pos_branch_dim.group_code` 的授權來源
-  - 現況：schema 有欄位，但目前同步刻意寫 NULL；這對 MVP 不阻塞，但若前端要 branch group filter 會變成需求缺口。
-  - 關聯檔案：`db/init/001_schema.sql`、`文件/table 結構文件.md`
-  - 建議作法：前端 MVP 先不要承諾 branch group filter；若需要，先決定來源表或設定檔，再補 sync 與文件。
+ - [x] 決定 `pos_branch_dim.group_code` 的授權來源（已決定）
+  - 現況：`pos_branch_dim.group_code` 欄位存在於 schema（`db/init/001_schema.sql`），但目前同步流程不會寫入該欄位（現有 sync 未提供 group_code 值，因此多數紀錄為 NULL）。
+  - 決議（2026/06/22）：
+    - `group_code` 為非 authoritative 欄位目前（read-only metadata placeholder）。
+    - 前端/POC 不應承諾或依賴 branch-group filtering，`group_code` 目前不可作為 POC filter 條件。
+    - 若未來要支援 branch-group filter，必須先：
+      1. 定義 authoritative source（例如新增專用 table 或由外部 config 提供），
+      2. 更新 `ia-analyses-go` 的 sync pipeline 使其寫入 `pos_branch_dim.group_code`，
+      3. 同時在 `db/init/001_schema.sql` 與新增 patch（`db/patches/`）中記錄變更，並在 `文件/table 結構文件.md` 註記 `modified by patch <patch-filename>` 或 `introduced by patch <patch-filename>`。
+  - 建議作法：目前不變更 schema / patch / sync；在需要支援前端 filter 時，按以上步驟執行並在 PR 中標明驗證計畫。
 
 ## 已完成的文件整理
 

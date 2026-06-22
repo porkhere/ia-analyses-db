@@ -107,6 +107,11 @@
 
 唯一鍵：`(owner_user_id, branch_id)`
 
+`group_code` 欄位授權來源說明：
+- 目前狀況：`group_code` 已在 `db/init/001_schema.sql` 定義，但現有同步流程（`ia-analyses-go` 的 sync）並不提供 authoritative `group_code` 值，因而多數紀錄為 NULL。
+- Policy：在 POC 階段 `group_code` 為非 authoritative placeholder；前端不應使用 `group_code` 作為 filter 條件。在未定義 authoritative source 之前，不要承諾 branch-group filter。
+- 若未來要啟用：請先定義 authoritative source、更新 sync pipeline、在 `db/patches/` 提交 patch 並更新 `文件/table 結構文件.md` 中該欄位註記為 `introduced/modified by patch <patch-filename>`。
+
 ### pos_sales_hourly_fact
 
 用途：承接商品層級的小時銷售彙總。
