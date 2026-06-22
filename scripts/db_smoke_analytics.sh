@@ -115,4 +115,52 @@ SQL
   fi
 fi
 
+# Minimal product-summary grain check: join product dim with sales fact and aggregate per product
+if product_summary_count="$(docker compose --project-directory "$PROJECT_DIR" --env-file "$ENV_FILE" exec -T postgres \
+  psql -U "$PGUSER" -d "$PGDATABASE" -v ON_ERROR_STOP=1 -At <<'SQL'
+SELECT COUNT(*) FROM (
+  SELECT
+    fact.owner_user_id,
+    fact.product_no,
+    product.product_name,
+    SUM(fact.qty_milli) AS total_qty_milli,
+    SUM(fact.net_sales_milli) AS total_net_sales_milli
+  FROM public.pos_sales_hourly_fact AS fact
+  JOIN public.pos_product_dim AS product
+    ON product.owner_user_id = fact.owner_user_id
+   AND product.product_no = fact.product_no
+  GROUP BY fact.owner_user_id, fact.product_no, product.product_name
+) AS t;
+SQL
+)"; then
+  echo "smoke_product_summary_count: $product_summary_count"
+else
+  echo "smoke failed: product-summary aggregation query execution error" >&2
+  exit 1
+fi
+
+if (( product_summary_count == 0 )); then
+  echo "smoke failed: product-summary aggregation returned 0 rows" >&2
+  smoke_failed=1
+else
+  # preview top 5 product-summary rows
+  if product_summary_preview="$(docker compose --project-directory "$PROJECT_DIR" --env-file "$ENV_FILE" exec -T postgres \
+    psql -U "$PGUSER" -d "$PGDATABASE" -v ON_ERROR_STOP=1 -At <<'SQL'
+SELECT owner_user_id || '|' || product_no || '|' || product_name || '|' || SUM(qty_milli) || '|' || SUM(net_sales_milli)
+FROM public.pos_sales_hourly_fact AS fact
+JOIN public.pos_product_dim AS product
+  ON product.owner_user_id = fact.owner_user_id
+ AND product.product_no = fact.product_no
+GROUP BY owner_user_id, product_no, product_name
+ORDER BY SUM(net_sales_milli) DESC NULLS LAST
+LIMIT 5;
+SQL
+)"; then
+    echo "smoke_product_summary_top5:"
+    if [[ -n "$product_summary_preview" ]]; then
+      echo "$product_summary_preview"
+    fi
+  fi
+fi
+
 echo "smoke passed"
