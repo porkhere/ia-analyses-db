@@ -38,12 +38,12 @@
   - 現況：`scripts/db_smoke_analytics.sh` 已檢查基本表數與 join；前端要看的 product summary / top-bottom / period comparison 口徑主要由 Go SQL 承接。
   - 關聯檔案：`scripts/db_smoke_analytics.sh`、`ia-analyses-go/internal/postgres/stat_feed_reader.go`
   - 建議作法：補一個小型 smoke 查詢，驗證 `pos_sales_hourly_fact` join `pos_product_dim` 後能產出 product-summary grain，避免前端展示時才發現資料口徑缺口。
-
-- [x] 補 smoke analytics 的前端分析口徑檢查（部分完成）
-  - 現況更新（2026/06/22）：已在 `scripts/db_smoke_analytics.sh` 中新增一個 minimal product-summary grain aggregation query（count 與 top5 preview），該腳本經 `bash -n` 語法檢查通過。
-  - 執行狀態：已新增 query 並提交；**2026/06/22 已在本機執行 runtime smoke 並修正 preview ambiguous 欄位，preview 成功且有 top5 結果（仍保留原有 checks）**。
+ - [x] 補 smoke analytics 的前端分析口徑檢查（已完成）
+  - 證明（2026/06/22）：
+    - 已新增 product-summary grain minimal aggregation query（count + top5 preview）到 `scripts/db_smoke_analytics.sh`。
+    - `bash -n scripts/db_smoke_analytics.sh` → PASS。
+    - `make dev-smoke-analytics` → executed; preview and other checks returned expected non-zero results and top5 preview after fixing an ambiguous `owner_user_id` reference.
   - 關聯檔案：`scripts/db_smoke_analytics.sh`、`ia-analyses-go/internal/postgres/stat_feed_reader.go`
-  - 建議作法：若要標記為完全完成，需在可連到容器的環境執行 `make dev-smoke-analytics` 並確認有非零的 preview 結果。
 
  - [x] 決定 `pos_branch_dim.group_code` 的授權來源（已決定）
   - 現況：`pos_branch_dim.group_code` 欄位存在於 schema（`db/init/001_schema.sql`），但目前同步流程不會寫入該欄位（現有 sync 未提供 group_code 值，因此多數紀錄為 NULL）。
