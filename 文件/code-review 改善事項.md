@@ -10,15 +10,15 @@
 
 ## Checkpoint
 
-- [ ] 定義正式 owner / tenant key 規則
-  - 現況：`ia_users` seed 仍是 `demo-owner` / id `1`，文件已標為已知問題。
-  - 關聯檔案：`db/init/001_schema.sql`、`文件/已知的問題.md`、`ia-analyses-go/internal/frontendapi/service.go`
-  - 建議作法：前端 MVP 可先固定單 tenant，但要決定 `owner_user_key` 是否對應 Athena database、客戶代碼或登入租戶；定案後同步 Go repo 的預設值與既有落地資料 migration。
-
-- [ ] 收斂 bridge copy 的生命週期
-  - 現況：本 repo 仍保留 `cmd/`、`internal/` 作為 Go bridge copy；正式 Go pipeline 已在 `ia-analyses-go`。
-  - 關聯檔案：`Makefile`、`cmd/`、`internal/`、`文件/架構指南.md`
-  - 建議作法：保留到前端 MVP 前可以接受，但新增 Go pipeline 功能不要再落在 DB repo。等 `ia-analyses-go` 穩定後，建立一次清除 checkpoint，把 bridge copy 改成封存或移除。
+ - [x] 定義正式 owner / tenant key 規則（已完成）
+   - 決議（2026/06/22）：
+     1. POC tenant key 為 `50lan-dev`。
+     2. `owner_user_id=1` 繼續作為本地 DB 目前 seed / 現有資料的 owner id（不變動本次）。
+     3. `demo-owner` 為舊版/開發用 seed 用語，請勿在前端或對外文件中使用此詞作為 tenant 命名；前端應顯示或使用正式 tenant key（`50lan-dev`）或客戶端可理解的名稱。
+     4. `owner_user_key` 應表示應用層/客戶的 tenant key（application/customer tenant key），而非直接存放 Athena database 名稱或其他運維識別字串。
+     5. Go/frontend 在接收 tenant key 後，應在後端解析並對應到 `owner_user_id`（internal resolution）；本次不實作解析變更，僅記錄政策。
+     6. 本次不做任何 DB migration 與程式碼變更；未來若要變更儲存的 key 或預設值，必須同步更新：DB seed、`ia-analyses-go` 的預設 tenant resolver、以及既有本地資料的 migration 計畫。
+   - 關聯檔案：`文件/已知的問題.md`、`文件/架構指南.md`、`db/init/001_schema.sql`
  - [x] 收斂 bridge copy 的生命週期（已完成）
    - 決議：
      1. `ia-analyses-db` 可保留現有 `cmd/` 與 `internal/` bridge copy，直到前端 MVP 與 `ia-analyses-go` 的 Go pipeline 穩定為止。
