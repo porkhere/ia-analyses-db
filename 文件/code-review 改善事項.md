@@ -20,9 +20,18 @@
   - 關聯檔案：`Makefile`、`cmd/`、`internal/`、`文件/架構指南.md`
   - 建議作法：保留到前端 MVP 前可以接受，但新增 Go pipeline 功能不要再落在 DB repo。等 `ia-analyses-go` 穩定後，建立一次清除 checkpoint，把 bridge copy 改成封存或移除。
 
-- [ ] 確認 `db/init` 與 `db/patches` 的漂移管理方式
-  - 現況：`001_schema.sql` 已包含 phase2c 結構，`003_phase2c_schema_contract.sql` 也存在正式 patch；這對新 DB 與舊 DB 都合理，但後續容易出現 init/patch 雙處修改不一致。
+ - [x] 確認 `db/init` 與 `db/patches` 的漂移管理方式（已完成）
+  - 現況：`001_schema.sql` 與 `db/patches/` 都存在 Phase 2C 相關內容，過去曾出現 init 與 patch 在不同檔案描述同一變更的情況，需制定明確流程以避免 drift。
   - 關聯檔案：`db/init/001_schema.sql`、`db/patches/002_adjust_qty_and_sales_ex_tax.sql`、`db/patches/003_phase2c_schema_contract.sql`
+  - 決議（2026/06/22）：建立以下 drift 管理規範（policy）：
+    1. 新資料庫（New DB）建立路徑：`db/init/*` 為 authoritative，任何在 `db/init/` 的 schema 定義為新庫初始化時唯一信源。
+    2. 現有資料庫升級路徑（Existing DB upgrade）：`db/patches/*` 為 authoritative，所有要在既有安裝上套用的變更必須以新 patch 檔實作。
+    3. 每次 schema 變更流程（mandatory steps）：在提出任何 schema 變更前後，請務必同時完成：
+       - 在 `db/init/001_schema.sql` 中更新/加入最終的初始化定義（代表新庫狀態）。
+       - 新增一個 `db/patches/` patch 檔以支援既有庫的升級路徑（patch 檔名需以遞增編號開頭並包含簡短說明）。
+       - 更新 `文件/table 結構文件.md`，在對應 table 條目中標註該變更是：`introduced by init`、或 `introduced by patch <patch-filename>`，若為修改則註記 `modified by patch <patch-filename>`。
+    4. 文件與驗證：新增變更時，請在 PR 描述包含：受影響檔案清單（init / patch / docs）、執行順序（init-only vs patch-on-existing）、以及在本地執行 `make dev-smoke-analytics` / `bash -n scripts/db_smoke_analytics.sh` 的驗證步驟摘要。
+    5. 回溯一致性檢查（periodic check）：每個主要 release 前應執行一次自動或人工檢查，確認 `db/init/001_schema.sql` 與歷史 `db/patches` 的最終狀態在語義上相容（例如檢查欄位存在性與型別兼容），將檢查結果寫入 release note。
   - 建議作法：每次 schema 變更都明確記錄「新庫 init 直接包含」與「舊庫 patch 演進」兩條路徑；新增 table 文件時標明來源是 init 還是 patch。
 
 - [ ] 補 smoke analytics 的前端分析口徑檢查

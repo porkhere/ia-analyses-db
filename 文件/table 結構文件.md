@@ -87,6 +87,10 @@
 
 唯一鍵：`(owner_user_id, product_no)`
 
+來源註記：
+- introduced by init: `db/init/001_schema.sql`（初始定義）
+- 若欄位由 patch 新增，請標註為 `introduced by patch <patch-filename>` 並註明 patch 名稱。
+
 ### pos_branch_dim
 
 用途：紀錄 owner 名下的門市維度。
@@ -126,6 +130,10 @@ grain：`owner_user_id + business_date + hour_of_day + branch_id + product_no + 
 - `created_at`、`updated_at`
 
 註記：`pos_sales_hourly_fact` 與 `pos_product_dim` 已在 smoke analytics 的 product-summary 檢查中被 JOIN 用於產生 product-summary grain（aggregation by `owner_user_id` + `product_no` + `product_name`），以驗證前端所需口徑能否由現有 fact/dim 計算得出。
+
+來源註記：
+- introduced by init: `db/init/001_schema.sql`
+- 如果有 patch 修改（例如 rename/新增欄位），請在該欄位下註記 `modified by patch <patch-filename>`。
 
 唯一鍵就是這張 fact 的正式 grain。
 
