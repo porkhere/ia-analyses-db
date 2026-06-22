@@ -19,6 +19,13 @@
   - 現況：本 repo 仍保留 `cmd/`、`internal/` 作為 Go bridge copy；正式 Go pipeline 已在 `ia-analyses-go`。
   - 關聯檔案：`Makefile`、`cmd/`、`internal/`、`文件/架構指南.md`
   - 建議作法：保留到前端 MVP 前可以接受，但新增 Go pipeline 功能不要再落在 DB repo。等 `ia-analyses-go` 穩定後，建立一次清除 checkpoint，把 bridge copy 改成封存或移除。
+ - [x] 收斂 bridge copy 的生命週期（已完成）
+   - 決議：
+     1. `ia-analyses-db` 可保留現有 `cmd/` 與 `internal/` bridge copy，直到前端 MVP 與 `ia-analyses-go` 的 Go pipeline 穩定為止。
+     2. 不允許在 `ia-analyses-db` 新增任何 Go pipeline 功能；所有新 Go pipeline 工作必須落在 `ia-analyses-go`。
+     3. 未來步驟：在 `ia-analyses-go` 穩定後，開一個獨立的 cleanup checkpoint（archive / remove bridge copy），屆時再決定封存或刪除策略。
+     4. 本次變更不會刪除或移動任何檔案；僅記錄政策與未來清理計畫。
+   - 關聯檔案：`Makefile`、`cmd/`、`internal/`、`文件/架構指南.md`
 
  - [x] 確認 `db/init` 與 `db/patches` 的漂移管理方式（已完成）
   - 現況：`001_schema.sql` 與 `db/patches/` 都存在 Phase 2C 相關內容，過去曾出現 init 與 patch 在不同檔案描述同一變更的情況，需制定明確流程以避免 drift。
@@ -34,16 +41,12 @@
     5. 回溯一致性檢查（periodic check）：每個主要 release 前應執行一次自動或人工檢查，確認 `db/init/001_schema.sql` 與歷史 `db/patches` 的最終狀態在語義上相容（例如檢查欄位存在性與型別兼容），將檢查結果寫入 release note。
   - 建議作法：每次 schema 變更都明確記錄「新庫 init 直接包含」與「舊庫 patch 演進」兩條路徑；新增 table 文件時標明來源是 init 還是 patch。
 
-- [ ] 補 smoke analytics 的前端分析口徑檢查
-  - 現況：`scripts/db_smoke_analytics.sh` 已檢查基本表數與 join；前端要看的 product summary / top-bottom / period comparison 口徑主要由 Go SQL 承接。
-  - 關聯檔案：`scripts/db_smoke_analytics.sh`、`ia-analyses-go/internal/postgres/stat_feed_reader.go`
-  - 建議作法：補一個小型 smoke 查詢，驗證 `pos_sales_hourly_fact` join `pos_product_dim` 後能產出 product-summary grain，避免前端展示時才發現資料口徑缺口。
  - [x] 補 smoke analytics 的前端分析口徑檢查（已完成）
-  - 證明（2026/06/22）：
-    - 已新增 product-summary grain minimal aggregation query（count + top5 preview）到 `scripts/db_smoke_analytics.sh`。
-    - `bash -n scripts/db_smoke_analytics.sh` → PASS。
-    - `make dev-smoke-analytics` → executed; preview and other checks returned expected non-zero results and top5 preview after fixing an ambiguous `owner_user_id` reference.
-  - 關聯檔案：`scripts/db_smoke_analytics.sh`、`ia-analyses-go/internal/postgres/stat_feed_reader.go`
+ - 證明（2026/06/22）：
+   - 已新增 product-summary grain minimal aggregation query（count + top5 preview）到 `scripts/db_smoke_analytics.sh`。
+   - `bash -n scripts/db_smoke_analytics.sh` → PASS。
+   - `make dev-smoke-analytics` → executed; preview and other checks returned expected non-zero results and top5 preview after fixing an ambiguous `owner_user_id` reference。
+ - 關聯檔案：`scripts/db_smoke_analytics.sh`、`ia-analyses-go/internal/postgres/stat_feed_reader.go`
 
  - [x] 決定 `pos_branch_dim.group_code` 的授權來源（已決定）
   - 現況：`pos_branch_dim.group_code` 欄位存在於 schema（`db/init/001_schema.sql`），但目前同步流程不會寫入該欄位（現有 sync 未提供 group_code 值，因此多數紀錄為 NULL）。
