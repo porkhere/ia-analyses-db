@@ -4,7 +4,7 @@
 
 目前初始化 schema 由 `db/init/001_schema.sql` 定義，主體是 7 張核心表與對應 index / seed。資料流方向是：`ia_users` 提供 owner 對照，商品與門市由 dimension sync 寫入維度表，銷售資料由 `sales-pipe` 寫入 `pos_sales_hourly_fact`。
 
-另外還有 3 張 IA Signals 表（`ia_signal_weather`、`ia_signal_promotion`、`ia_signal_availability`，由 `db/patches/004_ia_signals.sql` 建立），獨立於 sales fact 存在，用途、grain、防洩漏語意見下方「IA Signals 訊號表」一節。
+另外還有 3 張 IA Signals 表（`ia_signal_weather`、`ia_signal_promotion`、`ia_signal_availability`，由 `db/patches/004_ia_signals.sql` 建立），以及 1 張分店地理與 CWA 對照表（`ia_branch_location_mapping`，由 `db/patches/005_branch_location_mapping.sql` 建立）。這些表都獨立於 sales fact 存在，細節見下方各節。
 
 ## 關聯圖概念
 
@@ -13,6 +13,7 @@
 - `pos_payment_type_dim.id` 被 `pos_sales_hourly_fact.payment_type_id` 參照
 - `pos_order_status_dim` 目前主要提供狀態語意對照與驗證，不直接成為現行 sales fact 的外鍵
 - `ia_users.id` 也被 `ia_signal_weather.owner_user_id`、`ia_signal_promotion.owner_user_id`、`ia_signal_availability.owner_user_id` 參照（tenant scoping）；這三張表跟 `pos_sales_hourly_fact` 之間**沒有** FK 關聯，刻意保持獨立
+- `ia_users.id` 也被 `ia_branch_location_mapping.owner_user_id` 參照（tenant scoping）；`ia_branch_location_mapping.branch_id` 刻意**沒有**參照 `pos_branch_dim.branch_id` 的 FK，讓分店維度改名或變動時仍能保留歷史對照
 
 ## 資料表說明
 
@@ -145,6 +146,38 @@ grain：`owner_user_id + business_date + hour_of_day + branch_id + product_no + 
 
 唯一鍵就是這張 fact 的正式 grain。
 
+### ia_branch_location_mapping
+
+用途：保存分店代碼與地址、行政區、郵遞區號、鄉鎮市區代碼、CWA 測站及經緯度的獨立對照。這張表是地理參考資料，不是 `pos_branch_dim` 的欄位延伸，也不會把地理資料塞進 `pos_sales_hourly_fact` 或 IA Signal 表。
+
+主要欄位：
+
+- `id`：主鍵
+- `owner_user_id`：參照 `ia_users.id`，用來隔離租戶資料
+- `branch_id`：來源分店代碼；不建立到 `pos_branch_dim.branch_id` 的外鍵
+- `address`、`city_county`、`township_district`、`postal_code`、`township_code`：地址與行政區對照欄位
+- `station_id`：外部氣象測站代碼，只有在有來源依據時才可填寫
+- `latitude`、`longitude`：經緯度；必須同時為 NULL 或同時有值，且分別限制在 -90 到 90、-180 到 180
+- `distance_meters`：對照距離，允許 NULL，但有值時不可為負數
+- `source_type`、`source_reference`：來源類型與可追溯的來源識別，不能是空白字串
+- `source_metadata`：JSONB 結構化來源補充資料，NOT NULL，沒有補充資料時使用 `{}`；不得用來藏未驗證的猜測值
+- `verification_status`：只能是 `unverified`、`verified`、`needs_review` 或 `rejected`
+- `verified_at`、`verified_by`：驗證時間與驗證者；狀態為 `verified` 時兩者都必須有值，且 `verified_by` 不能是空白
+- `valid_from`、`valid_to`：對照版本的生效區間，`valid_to` 可為 NULL，但有值時不得早於 `valid_from`
+- `created_at`、`updated_at`：稽核時間
+
+版本粒度與限制：唯一版本粒度是 `(owner_user_id, branch_id, valid_from)`。`owner_user_id` 是唯一的租戶範圍控制；`branch_id` 只作歷史對照識別，不對目前的 `pos_branch_dim` 建 FK，避免目前分店維度變動時破壞歷史資料。經緯度必須成對出現，座標與距離都由資料庫 CHECK constraint 做基本合法性限制。
+
+驗證規則：新進或尚未人工確認的資料使用 `unverified` 或 `needs_review`；只有留下 `verified_at` 與非空 `verified_by` 才能使用 `verified`。`rejected` 保留被判定不可用的來源紀錄，不能當成已驗證對照使用。
+
+來源中繼資料政策：`source_type` 與 `source_reference` 是必填且不得空白，`source_metadata` 用 JSONB 保存可追溯的來源補充資訊。這張表不接受猜測的地址、分店名稱、CWA 測站或座標；後續若要寫入，必須由明確來源或人工查核流程提供依據。
+
+本 Task 2.5.3.1 **只建立 schema，不填入任何 mapping rows**，也不包含 CWA 抓取、Weather adapter、應用程式寫入流程或其他 Phase 3 工作。
+
+來源註記：
+- fresh schema: `db/init/001_schema.sql`
+- introduced by patch: `db/patches/005_branch_location_mapping.sql`
+
 ## IA Signals 訊號表
 
 **設計前提（硬規則）**：這三張表是 IA Signals 的持久層，**獨立於 sales fact 存在**，絕不加欄位到 `pos_sales_hourly_fact` 或任何其他 sales fact 表。三張表都用 generic commerce naming（`location`、`item`、`tenant` 概念的 DB 內部對應是 `owner_user_id`），不引入新的 `branch_id`、`product_no` 或其他 50 嵐專屬命名。
@@ -219,6 +252,8 @@ grain：`owner_user_id + business_date + hour_of_day + branch_id + product_no + 
 - `idx_ia_users_active`：owner lookup
 - `idx_pos_product_dim_lookup`：商品 lookup
 - `idx_pos_branch_dim_lookup`：門市 lookup
+- `idx_ia_branch_location_mapping_owner_branch`：依租戶、分店與版本日期查詢地理對照
+- `idx_ia_branch_location_mapping_verified_current`：只索引已驗證且 `valid_to IS NULL` 的目前開放對照
 - `idx_pos_sales_hourly_fact_date`：日期與小時查詢
 - `idx_pos_sales_hourly_fact_branch`：門市分析
 - `idx_pos_sales_hourly_fact_product`：商品分析
@@ -233,3 +268,4 @@ grain：`owner_user_id + business_date + hour_of_day + branch_id + product_no + 
 - `ia-analyses-go` 的 `sales-pipe` 寫入 `pos_sales_hourly_fact`
 - 本 repo 的 seed 與 patch 保證 canonical 維度與 schema contract 維持一致
 - `ia_signal_weather` / `ia_signal_promotion` / `ia_signal_availability` 目前**尚無寫入來源**：本輪（Task 2.1）只建表，尚未實作 Signal 載入 CLI（見 `重構執行建議.md` Task 2.2，屬後續 Phase 2.2+ 工作，不在本輪範圍）
+- `ia_branch_location_mapping` 目前**沒有寫入來源，也沒有 mapping rows**：Task 2.5.3.1 只建立 schema 與約束，不填入地址、分店名稱、CWA 測站、座標或其他 fixture business data
