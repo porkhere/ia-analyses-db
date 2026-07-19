@@ -1,0 +1,3 @@
+customer,branch_id,location
+sample-customer,sample-branch-001,"SAMPLE ONLY - replace with an authoritative address"
+sample-customer,sample-branch-002,"SAMPLE ONLY - replace with an authoritative address"

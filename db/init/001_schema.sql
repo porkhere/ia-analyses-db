@@ -122,6 +122,31 @@ CREATE TABLE IF NOT EXISTS ia_branch_location_mapping (
             OR (verified_at IS NOT NULL AND NULLIF(BTRIM(verified_by), '') IS NOT NULL))
 );
 
+CREATE TABLE IF NOT EXISTS ia_branch_location_mapping_import_audit (
+    import_id BIGSERIAL PRIMARY KEY,
+    owner_user_id BIGINT NOT NULL REFERENCES ia_users(id),
+    customer TEXT NOT NULL,
+    mode TEXT NOT NULL,
+    source_reference TEXT NOT NULL,
+    source_sha256 TEXT NOT NULL,
+    row_count INTEGER NOT NULL,
+    previous_current_count INTEGER NOT NULL,
+    closed_count INTEGER NOT NULL,
+    inserted_count INTEGER NOT NULL,
+    previous_mappings JSONB NOT NULL DEFAULT '[]'::JSONB,
+    imported_mappings JSONB NOT NULL DEFAULT '[]'::JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT ia_branch_location_mapping_import_audit_mode_check
+        CHECK (mode = 'replace'),
+    CONSTRAINT ia_branch_location_mapping_import_audit_source_check
+        CHECK (BTRIM(source_reference) <> '' AND BTRIM(source_sha256) <> ''),
+    CONSTRAINT ia_branch_location_mapping_import_audit_counts_check
+        CHECK (row_count > 0
+            AND previous_current_count >= 0
+            AND closed_count >= 0
+            AND inserted_count >= 0)
+);
+
 CREATE TABLE IF NOT EXISTS pos_sales_hourly_fact (
     id BIGSERIAL PRIMARY KEY,
     owner_user_id BIGINT NOT NULL REFERENCES ia_users(id),
@@ -220,6 +245,9 @@ CREATE INDEX IF NOT EXISTS idx_ia_branch_location_mapping_owner_branch
 CREATE INDEX IF NOT EXISTS idx_ia_branch_location_mapping_verified_current
     ON ia_branch_location_mapping (owner_user_id, branch_id, valid_from DESC)
     WHERE verification_status = 'verified' AND valid_to IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_ia_branch_location_mapping_import_audit_owner_created
+    ON ia_branch_location_mapping_import_audit (owner_user_id, created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_pos_sales_hourly_fact_date
     ON pos_sales_hourly_fact (owner_user_id, business_date, hour_of_day);

@@ -172,11 +172,23 @@ grain：`owner_user_id + business_date + hour_of_day + branch_id + product_no + 
 
 來源中繼資料政策：`source_type` 與 `source_reference` 是必填且不得空白，`source_metadata` 用 JSONB 保存可追溯的來源補充資訊。這張表不接受猜測的地址、分店名稱、CWA 測站或座標；後續若要寫入，必須由明確來源或人工查核流程提供依據。
 
-本 Task 2.5.3.1 **只建立 schema，不填入任何 mapping rows**，也不包含 CWA 抓取、Weather adapter、應用程式寫入流程或其他 Phase 3 工作。
+CSV 匯入契約（Task 2.5.3.2）：正式輸入必須是 UTF-8 CSV，且 header 必須精確為 `customer,branch_id,location`。每個檔案只能包含一個 customer；欄位不可空白、CSV 格式錯誤、重複 `branch_id`、不存在 customer 或不屬於該 customer 的 branch 都會拒絕。`location` 只寫入 `address`，`source_type` 為 `csv`，`verification_status` 固定為 `unverified`；不從分店名稱或地址推導 CWA 測站、座標或 verified 狀態。
+
+操作入口在 `ia-analyses-go`：`make branch-location-import FILE=<path> DRY_RUN=1` 只做完整檔案與 tenant/branch 驗證並回報 counts/errors，不寫 DB；`make branch-location-import FILE=<path> MODE=replace` 會先完成整檔驗證，再以單一 atomic transaction 替換指定 customer 的 current mappings。header-only 或零資料列檔案會拒絕，避免意外清空 mapping。
+
+`ia_branch_location_mapping_import_audit` 會保存來源檔案 SHA-256、匯入前 mapping snapshot、匯入 row snapshot 與 replaced counts；既有 mapping rows 會先關閉有效期間，同日重跑也不會失去 audit。匯入器不修改 sales facts、`pos_branch_dim` 或 IA Signals。
 
 來源註記：
 - fresh schema: `db/init/001_schema.sql`
 - introduced by patch: `db/patches/005_branch_location_mapping.sql`
+
+### ia_branch_location_mapping_import_audit
+
+用途：保存 Task 2.5.3.2 CSV replace 匯入的批次稽核資訊與 mapping snapshot。這張表不參與 Weather evidence，也不取代 mapping table 的版本資料。
+
+主要欄位：`owner_user_id`、`customer`、`source_reference`、`source_sha256`、`row_count`、`previous_current_count`、`closed_count`、`inserted_count`、`previous_mappings`、`imported_mappings`、`created_at`。
+
+來源註記：`db/init/001_schema.sql`；incremental patch：`db/patches/006_branch_location_import_audit.sql`。
 
 ## IA Signals 訊號表
 
@@ -268,4 +280,4 @@ grain：`owner_user_id + business_date + hour_of_day + branch_id + product_no + 
 - `ia-analyses-go` 的 `sales-pipe` 寫入 `pos_sales_hourly_fact`
 - 本 repo 的 seed 與 patch 保證 canonical 維度與 schema contract 維持一致
 - `ia_signal_weather` / `ia_signal_promotion` / `ia_signal_availability` 目前**尚無寫入來源**：本輪（Task 2.1）只建表，尚未實作 Signal 載入 CLI（見 `重構執行建議.md` Task 2.2，屬後續 Phase 2.2+ 工作，不在本輪範圍）
-- `ia_branch_location_mapping` 目前**沒有寫入來源，也沒有 mapping rows**：Task 2.5.3.1 只建立 schema 與約束，不填入地址、分店名稱、CWA 測站、座標或其他 fixture business data
+- `ia_branch_location_mapping` 的正式寫入來源是 `ia-analyses-go` 的 `branch-location-import`；目前仍沒有匯入任何 business mapping rows。範例檔 `文件/branch-location-import-example.csv` 只含明確標記的 sample customer/rows，不是可直接宣告 verified 的資料。

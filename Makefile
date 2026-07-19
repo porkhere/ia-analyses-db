@@ -14,7 +14,7 @@ DOCKER_COMPOSE := docker compose --project-directory $(PROJECT_DIR) --env-file $
 	prod-up prod-wait prod-down prod-restart prod-migrate prod-size prod-backup prod-backup-list prod-sync-seeds prod-apply-patches prod-del-backup prod-restore \
 	db-psql \
 	sales-pipe-status sales-pipe-plan sales-pipe-validate sales-pipe-write-local sales-pipe-resume sales-pipe-report \
-	sync-sales-dims-plan sync-sales-dims
+	sync-sales-dims-plan sync-sales-dims branch-location-import
 
 define require_env
 	@if [ ! -f "$(ENV_FILE)" ]; then echo "找不到 .env，請先執行 make $(1)-env"; exit 1; fi
@@ -76,6 +76,8 @@ help:
 	@echo "  make sales-pipe-report"
 	@echo "  make sync-sales-dims-plan OWNER_USER_KEY=<key> OWNER_USER_ID=<id> START_DATE=YYYY-MM-DD [END_DATE=YYYY-MM-DD]"
 	@echo "  make sync-sales-dims OWNER_USER_KEY=<key> OWNER_USER_ID=<id> START_DATE=YYYY-MM-DD [END_DATE=YYYY-MM-DD]"
+	@echo "  make branch-location-import FILE=<path> DRY_RUN=1"
+	@echo "  make branch-location-import FILE=<path> MODE=replace"
 
 env-status:
 	@$(call require_current_env)
@@ -270,3 +272,7 @@ sync-sales-dims:
 	  . "$(ENV_FILE)"; \
 	  set +a; \
 	  cd "$(PROJECT_DIR)" && go run ./cmd/sync-sales-dims --owner-user-key "$(OWNER_USER_KEY)" --owner-user-id "$(OWNER_USER_ID)" --start-date "$(START_DATE)" $(if $(END_DATE),--end-date "$(END_DATE)",) --apply
+
+branch-location-import:
+		@if [ -z "$(FILE)" ]; then echo "請改用 ia-analyses-go 執行 make branch-location-import FILE=<path> DRY_RUN=1 或 MODE=replace"; exit 1; fi
+		@cd "$(PROJECT_DIR)../ia-analyses-go" && $(MAKE) --no-print-directory branch-location-import FILE="$(FILE)" DRY_RUN="$(DRY_RUN)" MODE="$(MODE)"
